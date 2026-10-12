@@ -18,7 +18,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="⚙ GAME &amp; RUNTIME SETTINGS"
+            android:text="⚙ REREV2 — RUNTIME &amp; GPU SETTINGS"
             android:textColor="@color/nfsmw_amber"
             android:textSize="17sp"
             android:textStyle="bold"
@@ -157,7 +157,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="⚡ GRAPHICS ENGINE &amp; VULKAN (ReXGlue)"
+                android:text="⚡ GRAPHICS ENGINE &amp; VULKAN (Xenos / ReXGlue)"
                 android:textColor="@color/nfsmw_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -168,7 +168,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Graphics Backend (GPU Emulator):"
+                android:text="GPU Emulation Plugin:"
                 android:textColor="#E0E0E0"
                 android:textSize="12sp"
                 android:layout_marginBottom="2dp" />
@@ -183,7 +183,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="ℹ 'Plume' is the fastest native Vulkan rewrite. 'Xenos' uses original emulation."
+                android:text="ℹ 'Xenos' is the official complete GPU plugin with texture untiling &amp; full shader support. 'Plume' is experimental."
                 android:textColor="#808080"
                 android:textSize="10sp"
                 android:layout_marginBottom="10dp" />
@@ -267,7 +267,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="ℹ Avoids sudden FPS drops when new effects are compiled on the track."
+                android:text="ℹ Avoids sudden FPS drops when new effects are compiled during gameplay."
                 android:textColor="#808080"
                 android:textSize="10sp"
                 android:layout_marginBottom="10dp" />
@@ -384,7 +384,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Anisotropic Filtering (Road Sharpness):"
+                android:text="Anisotropic Filtering (Texture Sharpness):"
                 android:textColor="#E0E0E0"
                 android:textSize="12sp"
                 android:layout_marginBottom="2dp" />
@@ -503,7 +503,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🏎️ GAME &amp; SYSTEM"
+                android:text="☣️ GAME &amp; SYSTEM"
                 android:textColor="@color/nfsmw_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -521,12 +521,12 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Unlock Black Edition Content (Bonus Cars)"
+                    android:text="Direct Host Resolve (Fast GPU Memory Copy)"
                     android:textColor="#E0E0E0"
                     android:textSize="12sp" />
 
                 <Switch
-                    android:id="@+id/sw_black_edition"
+                    android:id="@+id/sw_direct_host_resolve"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>

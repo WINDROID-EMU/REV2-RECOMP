@@ -48,7 +48,7 @@ import java.util.zip.ZipInputStream;
 
 public class TitleActivity extends Activity {
 
-    private static final String PREFS_NAME = "NFSMW_PREFS";
+    private static final String PREFS_NAME = "REREV2_PREFS";
     private static final String KEY_ROM_PATH = "game_rom_path";
     private static final String KEY_GPU_PLUGIN = "cfg_gpu_plugin";
     private static final String KEY_RESOLUTION = "cfg_resolution";
@@ -67,7 +67,7 @@ public class TitleActivity extends Activity {
     private static final String KEY_NATIVE_MSAA = "cfg_native_msaa";
     private static final String KEY_AUDIO_MUTE = "cfg_audio_mute";
     private static final String KEY_MNK_MODE = "cfg_mnk_mode";
-    private static final String KEY_BLACK_EDITION = "cfg_black_edition";
+    private static final String KEY_DIRECT_HOST_RESOLVE = "cfg_direct_host_resolve";
     private static final String KEY_GRANT_PRIVILEGES = "cfg_grant_privileges";
     private static final String KEY_GAMERTAG = "cfg_gamertag";
     private static final String KEY_LOG_LEVEL = "cfg_log_level";
@@ -400,6 +400,12 @@ public class TitleActivity extends Activity {
      */
     private void checkAndLoadGamePath() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        if (!prefs.contains(KEY_ROM_PATH)) {
+            SharedPreferences oldPrefs = getSharedPreferences("NFSMW_PREFS", Context.MODE_PRIVATE);
+            if (oldPrefs.contains(KEY_ROM_PATH)) {
+                prefs.edit().putString(KEY_ROM_PATH, oldPrefs.getString(KEY_ROM_PATH, null)).apply();
+            }
+        }
         String saved = prefs.getString(KEY_ROM_PATH, null);
 
         // 1. Testa o caminho previamente salvo pelo usuário
@@ -413,11 +419,11 @@ public class TitleActivity extends Activity {
 
         // 2. Busca automática em diretórios padrão comuns no Android
         String[] defaultLocations = new String[] {
-                "/sdcard/NFSMW/game_root",
-                "/sdcard/NFSMW",
-                "/sdcard/Download/NFSMW",
-                "/storage/emulated/0/NFSMW/game_root",
-                "/storage/emulated/0/NFSMW",
+                "/sdcard/RERev2/game_root",
+                "/sdcard/RERev2",
+                "/sdcard/Download/RERev2",
+                "/storage/emulated/0/RERev2/game_root",
+                "/storage/emulated/0/RERev2",
                 getExternalFilesDir(null) != null ? new File(getExternalFilesDir(null), "game_root").getAbsolutePath() : null
         };
 
@@ -851,7 +857,7 @@ public class TitleActivity extends Activity {
         Switch swNativeMsaa = dialogView.findViewById(R.id.sw_native_msaa);
         Switch swAudioMute = dialogView.findViewById(R.id.sw_audio_mute);
         Switch swMnkMode = dialogView.findViewById(R.id.sw_mnk_mode);
-        Switch swBlackEdition = dialogView.findViewById(R.id.sw_black_edition);
+        Switch swDirectHostResolve = dialogView.findViewById(R.id.sw_direct_host_resolve);
         Switch swGrantPrivileges = dialogView.findViewById(R.id.sw_grant_privileges);
 
         // SeekBars & Text
@@ -866,8 +872,8 @@ public class TitleActivity extends Activity {
         final String[] scaleLabels = {"1x - Native (Fastest)", "2x - 1440p (High Sharpness)", "3x - 4K"};
         final int[] scaleValues = {1, 2, 3};
 
-        final String[] pluginLabels = {"Plume (Native Vulkan - Fast)", "Xenos (Emulated Vulkan)"};
-        final String[] pluginValues = {"plume", "xenos"};
+        final String[] pluginLabels = {"Xenos (Vulkan - Completo / Recomendado)", "Plume (Vulkan - Experimental WIP)"};
+        final String[] pluginValues = {"xenos", "plume"};
 
         final String[] edramLabels = {"rtv (FBO Host - Fast / Recommended)", "rov (Pixel Shader Interlock - Slow)"};
         final String[] edramValues = {"rtv", "rov"};
@@ -905,7 +911,7 @@ public class TitleActivity extends Activity {
         int curScale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
         spResolutionScale.setSelection(findIntIndex(scaleValues, curScale, 0));
 
-        String curPlugin = prefs.getString(KEY_GPU_PLUGIN, "plume");
+        String curPlugin = prefs.getString(KEY_GPU_PLUGIN, "xenos");
         spGpuPlugin.setSelection(findStringIndex(pluginValues, curPlugin, 0));
 
         String curEdram = prefs.getString(KEY_EDRAM_PATH, "rtv");
@@ -935,7 +941,9 @@ public class TitleActivity extends Activity {
         swNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
         swAudioMute.setChecked(prefs.getBoolean(KEY_AUDIO_MUTE, false));
         swMnkMode.setChecked(prefs.getBoolean(KEY_MNK_MODE, false));
-        swBlackEdition.setChecked(prefs.getBoolean(KEY_BLACK_EDITION, true));
+        if (swDirectHostResolve != null) {
+            swDirectHostResolve.setChecked(prefs.getBoolean(KEY_DIRECT_HOST_RESOLVE, true));
+        }
         swGrantPrivileges.setChecked(prefs.getBoolean(KEY_GRANT_PRIVILEGES, false));
 
         int curSpeed = prefs.getInt(KEY_GAME_SPEED, 100);
@@ -1005,7 +1013,9 @@ public class TitleActivity extends Activity {
                 swNativeMsaa.setChecked(false);
                 swAudioMute.setChecked(false);
                 swMnkMode.setChecked(false);
-                swBlackEdition.setChecked(true);
+                if (swDirectHostResolve != null) {
+                    swDirectHostResolve.setChecked(true);
+                }
                 swGrantPrivileges.setChecked(false);
                 sbGameSpeed.setProgress(100);
                 etGamertag.setText("Player");
@@ -1036,7 +1046,7 @@ public class TitleActivity extends Activity {
                 boolean selNativeMsaa = swNativeMsaa.isChecked();
                 boolean selAudioMute = swAudioMute.isChecked();
                 boolean selMnk = swMnkMode.isChecked();
-                boolean selBlack = swBlackEdition.isChecked();
+                boolean selDirectResolve = (swDirectHostResolve != null) && swDirectHostResolve.isChecked();
                 boolean selGrant = swGrantPrivileges.isChecked();
                 int selSpeed = Math.max(20, sbGameSpeed.getProgress());
                 String selGamertag = etGamertag.getText().toString().trim();
@@ -1061,7 +1071,7 @@ public class TitleActivity extends Activity {
                         .putBoolean(KEY_NATIVE_MSAA, selNativeMsaa)
                         .putBoolean(KEY_AUDIO_MUTE, selAudioMute)
                         .putBoolean(KEY_MNK_MODE, selMnk)
-                        .putBoolean(KEY_BLACK_EDITION, selBlack)
+                        .putBoolean(KEY_DIRECT_HOST_RESOLVE, selDirectResolve)
                         .putBoolean(KEY_GRANT_PRIVILEGES, selGrant)
                         .putInt(KEY_GAME_SPEED, selSpeed)
                         .putString(KEY_GAMERTAG, selGamertag)
@@ -1097,7 +1107,7 @@ public class TitleActivity extends Activity {
             boolean nativeMsaa = prefs.getBoolean(KEY_NATIVE_MSAA, false);
             boolean mute = prefs.getBoolean(KEY_AUDIO_MUTE, false);
             boolean mnk = prefs.getBoolean(KEY_MNK_MODE, false);
-            boolean black = prefs.getBoolean(KEY_BLACK_EDITION, true);
+            boolean directResolve = prefs.getBoolean(KEY_DIRECT_HOST_RESOLVE, true);
             boolean grant = prefs.getBoolean(KEY_GRANT_PRIVILEGES, false);
             String gamertag = prefs.getString(KEY_GAMERTAG, "Player");
             String logLevel = prefs.getString(KEY_LOG_LEVEL, "info");
@@ -1151,7 +1161,7 @@ public class TitleActivity extends Activity {
             toml.append("audio_mute = ").append(mute ? "true" : "false").append((char) 10);
             toml.append("mnk_mode = ").append(mnk ? "true" : "false").append((char) 10).append((char) 10);
 
-            toml.append("black_edition = ").append(black ? "true" : "false").append((char) 10);
+            toml.append("direct_host_resolve = ").append(directResolve ? "true" : "false").append((char) 10);
             toml.append("grant_user_privileges = ").append(grant ? "true" : "false").append((char) 10);
             toml.append("user_profile_name = ").append((char) 34).append(gamertag).append((char) 34).append((char) 10);
             toml.append("game_speed = ").append(String.format(java.util.Locale.US, "%.1f", (float) speed)).append((char) 10);
@@ -1201,7 +1211,10 @@ public class TitleActivity extends Activity {
             if (!shaderDir.exists()) {
                 shaderDir.mkdirs();
             }
-            String[] shaderFiles = new String[] { "454107D9.xsh", "454107D9.fbo.vk.xpso", "454107D9_prebaked.spvcache", "454107D9_hw.vkcache" };
+            String[] list = getAssets().list("shaders/shareable");
+            String[] shaderFiles = (list != null && list.length > 0) ? list : new String[] {
+                "5841144C.xsh", "5841144C.fbo.vk.xpso", "5841144C_prebaked.spvcache", "5841144C_hw.vkcache"
+            };
             for (String fileName : shaderFiles) {
                 File target = new File(shaderDir, fileName);
                 try (java.io.InputStream in = getAssets().open("shaders/shareable/" + fileName)) {
@@ -1213,14 +1226,14 @@ public class TitleActivity extends Activity {
                             while ((read = in.read(buf)) != -1) {
                                 out.write(buf, 0, read);
                             }
-                            android.util.Log.i("NFS-Title", "Extracted bundled shader asset: " + fileName + " (" + target.length() + " bytes)");
+                            android.util.Log.i("RERev2-Title", "Extracted bundled shader asset: " + fileName + " (" + target.length() + " bytes)");
                         }
                     }
                 } catch (Exception ignored) {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w("NFS-Title", "Error extracting shader assets", e);
+            android.util.Log.w("RERev2-Title", "Error extracting shader assets", e);
         }
     }
 
