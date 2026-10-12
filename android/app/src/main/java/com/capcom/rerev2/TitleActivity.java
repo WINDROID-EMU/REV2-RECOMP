@@ -29,10 +29,10 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -847,18 +847,18 @@ public class TitleActivity extends Activity {
         Spinner spAntialiasing = dialogView.findViewById(R.id.sp_antialiasing);
         Spinner spLogLevel = dialogView.findViewById(R.id.sp_log_level);
 
-        // Switches
-        Switch swVsync = dialogView.findViewById(R.id.sw_vsync);
-        Switch swStretchScreen = dialogView.findViewById(R.id.sw_stretch_screen);
-        Switch swAsyncShaders = dialogView.findViewById(R.id.sw_async_shaders);
-        Switch swAsyncSkip = dialogView.findViewById(R.id.sw_async_skip);
-        Switch swGpu3dTo2d = dialogView.findViewById(R.id.sw_gpu_3d_to_2d);
-        Switch swReadbackResolve = dialogView.findViewById(R.id.sw_readback_resolve);
-        Switch swNativeMsaa = dialogView.findViewById(R.id.sw_native_msaa);
-        Switch swAudioMute = dialogView.findViewById(R.id.sw_audio_mute);
-        Switch swMnkMode = dialogView.findViewById(R.id.sw_mnk_mode);
-        Switch swDirectHostResolve = dialogView.findViewById(R.id.sw_direct_host_resolve);
-        Switch swGrantPrivileges = dialogView.findViewById(R.id.sw_grant_privileges);
+        // CheckBoxes
+        CheckBox cbVsync = dialogView.findViewById(R.id.cb_vsync);
+        CheckBox cbStretchScreen = dialogView.findViewById(R.id.cb_stretch_screen);
+        CheckBox cbAsyncShaders = dialogView.findViewById(R.id.cb_async_shaders);
+        CheckBox cbAsyncSkip = dialogView.findViewById(R.id.cb_async_skip);
+        CheckBox cbGpu3dTo2d = dialogView.findViewById(R.id.cb_gpu_3d_to_2d);
+        CheckBox cbReadbackResolve = dialogView.findViewById(R.id.cb_readback_resolve);
+        CheckBox cbNativeMsaa = dialogView.findViewById(R.id.cb_native_msaa);
+        CheckBox cbAudioMute = dialogView.findViewById(R.id.cb_audio_mute);
+        CheckBox cbMnkMode = dialogView.findViewById(R.id.cb_mnk_mode);
+        CheckBox cbDirectHostResolve = dialogView.findViewById(R.id.cb_direct_host_resolve);
+        CheckBox cbGrantPrivileges = dialogView.findViewById(R.id.cb_grant_privileges);
 
         // SeekBars & Text
         SeekBar sbGameSpeed = dialogView.findViewById(R.id.sb_game_speed);
@@ -932,19 +932,19 @@ public class TitleActivity extends Activity {
         String curLog = prefs.getString(KEY_LOG_LEVEL, "info");
         spLogLevel.setSelection(findStringIndex(logValues, curLog, 2));
 
-        swVsync.setChecked(prefs.getBoolean(KEY_VSYNC, true));
-        swStretchScreen.setChecked(prefs.getBoolean(KEY_STRETCH_SCREEN, true));
-        swAsyncShaders.setChecked(prefs.getBoolean(KEY_ASYNC_SHADERS, true));
-        swAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, false));
-        swGpu3dTo2d.setChecked(prefs.getBoolean(KEY_GPU_3D_TO_2D, true));
-        swReadbackResolve.setChecked(prefs.getBoolean(KEY_READBACK_RESOLVE, false));
-        swNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
-        swAudioMute.setChecked(prefs.getBoolean(KEY_AUDIO_MUTE, false));
-        swMnkMode.setChecked(prefs.getBoolean(KEY_MNK_MODE, false));
-        if (swDirectHostResolve != null) {
-            swDirectHostResolve.setChecked(prefs.getBoolean(KEY_DIRECT_HOST_RESOLVE, true));
+        cbVsync.setChecked(prefs.getBoolean(KEY_VSYNC, true));
+        cbStretchScreen.setChecked(prefs.getBoolean(KEY_STRETCH_SCREEN, true));
+        cbAsyncShaders.setChecked(prefs.getBoolean(KEY_ASYNC_SHADERS, true));
+        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, false));
+        cbGpu3dTo2d.setChecked(prefs.getBoolean(KEY_GPU_3D_TO_2D, true));
+        cbReadbackResolve.setChecked(prefs.getBoolean(KEY_READBACK_RESOLVE, false));
+        cbNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
+        cbAudioMute.setChecked(prefs.getBoolean(KEY_AUDIO_MUTE, false));
+        cbMnkMode.setChecked(prefs.getBoolean(KEY_MNK_MODE, false));
+        if (cbDirectHostResolve != null) {
+            cbDirectHostResolve.setChecked(prefs.getBoolean(KEY_DIRECT_HOST_RESOLVE, true));
         }
-        swGrantPrivileges.setChecked(prefs.getBoolean(KEY_GRANT_PRIVILEGES, false));
+        cbGrantPrivileges.setChecked(prefs.getBoolean(KEY_GRANT_PRIVILEGES, false));
 
         int curSpeed = prefs.getInt(KEY_GAME_SPEED, 100);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1004,19 +1004,19 @@ public class TitleActivity extends Activity {
                 spAnisotropic.setSelection(2);
                 spAntialiasing.setSelection(0);
                 spLogLevel.setSelection(2);
-                swVsync.setChecked(true);
-                swStretchScreen.setChecked(true);
-                swAsyncShaders.setChecked(true);
-                swAsyncSkip.setChecked(false);
-                swGpu3dTo2d.setChecked(true);
-                swReadbackResolve.setChecked(false);
-                swNativeMsaa.setChecked(false);
-                swAudioMute.setChecked(false);
-                swMnkMode.setChecked(false);
-                if (swDirectHostResolve != null) {
-                    swDirectHostResolve.setChecked(true);
+                cbVsync.setChecked(true);
+                cbStretchScreen.setChecked(true);
+                cbAsyncShaders.setChecked(true);
+                cbAsyncSkip.setChecked(false);
+                cbGpu3dTo2d.setChecked(true);
+                cbReadbackResolve.setChecked(false);
+                cbNativeMsaa.setChecked(false);
+                cbAudioMute.setChecked(false);
+                cbMnkMode.setChecked(false);
+                if (cbDirectHostResolve != null) {
+                    cbDirectHostResolve.setChecked(true);
                 }
-                swGrantPrivileges.setChecked(false);
+                cbGrantPrivileges.setChecked(false);
                 sbGameSpeed.setProgress(100);
                 etGamertag.setText("Player");
                 Toast.makeText(TitleActivity.this, "Optimized Android defaults restored.", Toast.LENGTH_SHORT).show();
@@ -1037,17 +1037,17 @@ public class TitleActivity extends Activity {
                 String selAa = aaValues[spAntialiasing.getSelectedItemPosition()];
                 String selLog = logValues[spLogLevel.getSelectedItemPosition()];
 
-                boolean selVsync = swVsync.isChecked();
-                boolean selStretchScreen = swStretchScreen.isChecked();
-                boolean selAsyncShaders = swAsyncShaders.isChecked();
-                boolean selAsyncSkip = swAsyncSkip.isChecked();
-                boolean selGpu3dTo2d = swGpu3dTo2d.isChecked();
-                boolean selReadback = swReadbackResolve.isChecked();
-                boolean selNativeMsaa = swNativeMsaa.isChecked();
-                boolean selAudioMute = swAudioMute.isChecked();
-                boolean selMnk = swMnkMode.isChecked();
-                boolean selDirectResolve = (swDirectHostResolve != null) && swDirectHostResolve.isChecked();
-                boolean selGrant = swGrantPrivileges.isChecked();
+                boolean selVsync = cbVsync.isChecked();
+                boolean selStretchScreen = cbStretchScreen.isChecked();
+                boolean selAsyncShaders = cbAsyncShaders.isChecked();
+                boolean selAsyncSkip = cbAsyncSkip.isChecked();
+                boolean selGpu3dTo2d = cbGpu3dTo2d.isChecked();
+                boolean selReadback = cbReadbackResolve.isChecked();
+                boolean selNativeMsaa = cbNativeMsaa.isChecked();
+                boolean selAudioMute = cbAudioMute.isChecked();
+                boolean selMnk = cbMnkMode.isChecked();
+                boolean selDirectResolve = (cbDirectHostResolve != null) && cbDirectHostResolve.isChecked();
+                boolean selGrant = cbGrantPrivileges.isChecked();
                 int selSpeed = Math.max(20, sbGameSpeed.getProgress());
                 String selGamertag = etGamertag.getText().toString().trim();
                 if (selGamertag.isEmpty()) selGamertag = "Player";

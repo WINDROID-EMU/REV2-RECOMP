@@ -73,15 +73,16 @@
                 android:layout_height="wrap_content"
                 android:text="Output Resolution:"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_resolution"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <!-- Internal Resolution (Supersampling) -->
             <TextView
@@ -89,66 +90,50 @@
                 android:layout_height="wrap_content"
                 android:text="Internal Engine Resolution (Supersampling):"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_resolution_scale"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <!-- V-Sync -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_vsync"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Vertical Sync (V-Sync)"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_vsync"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Vertical Sync (V-Sync)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="4dp" />
 
             <!-- Stretch Screen -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_stretch_screen"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Stretch Screen (Fill Entire Display)"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_stretch_screen"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Stretch Screen (Fill Entire Display)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="2dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Removes black bars by stretching the game to match the device aspect ratio."
-                android:textColor="#808080"
-                android:textSize="10sp"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginStart="32dp"
                 android:layout_marginBottom="12dp" />
 
             <!-- ========================================================= -->
@@ -170,13 +155,14 @@
                 android:layout_height="wrap_content"
                 android:text="GPU Emulation Plugin:"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_gpu_plugin"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
                 android:layout_marginBottom="4dp" />
 
@@ -184,9 +170,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ 'Xenos' is the official complete GPU plugin with texture untiling &amp; full shader support. 'Plume' is experimental."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
 
             <!-- EDRAM -->
             <TextView
@@ -194,13 +180,14 @@
                 android:layout_height="wrap_content"
                 android:text="Xenos EDRAM Emulation:"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_edram_path"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
                 android:layout_marginBottom="4dp" />
 
@@ -208,69 +195,53 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ 'rtv' (FBO) mode doubles the framerate and is highly recommended for phones."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
 
             <!-- Async Shader Compilation -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_async_shaders"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Asynchronous Shader Compilation"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_async_shaders"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Asynchronous Shader Compilation"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="2dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Compiles pipelines in the background to reduce stuttering in-game."
-                android:textColor="#808080"
-                android:textSize="10sp"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginStart="32dp"
                 android:layout_marginBottom="8dp" />
 
             <!-- Skip Incomplete Frames -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_async_skip"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Skip Frames with Incomplete Shaders"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_async_skip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Skip Frames with Incomplete Shaders"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="2dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Avoids sudden FPS drops when new effects are compiled during gameplay."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginStart="32dp"
+                android:layout_marginBottom="12dp" />
 
             <!-- Pipeline Threads -->
             <TextView
@@ -278,13 +249,14 @@
                 android:layout_height="wrap_content"
                 android:text="Vulkan Compilation Threads (Pipelines):"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_pipeline_threads"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
                 android:layout_marginBottom="4dp" />
 
@@ -292,9 +264,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ 2 Threads saves battery and reduces heat; 4 Threads compiles faster."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
 
             <!-- Texture Cache -->
             <TextView
@@ -302,13 +274,14 @@
                 android:layout_height="wrap_content"
                 android:text="Texture Cache Memory Limit:"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_texture_cache_limit"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
                 android:layout_marginBottom="4dp" />
 
@@ -316,69 +289,53 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ 256MB or 384MB prevents forced closes due to low RAM on 4GB–6GB Android phones."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
 
             <!-- GPU 3D to 2D -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_gpu_3d_to_2d"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Optimize 3D Textures to 2D (gpu_3d_to_2d)"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_gpu_3d_to_2d"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Optimize 3D Textures to 2D (gpu_3d_to_2d)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="2dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Saves graphics memory bandwidth on Adreno and Mali mobile GPUs."
-                android:textColor="#808080"
-                android:textSize="10sp"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginStart="32dp"
                 android:layout_marginBottom="8dp" />
 
             <!-- Post-Processing / Bloom -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_readback_resolve"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Post-Processing Effects / Bloom (readback_resolve)"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_readback_resolve"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Post-Processing Effects / Bloom (readback_resolve)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="2dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Disabling this greatly reduces GPU load and increases FPS on Android."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginStart="32dp"
+                android:layout_marginBottom="12dp" />
 
             <!-- Anisotropic Filtering -->
             <TextView
@@ -386,15 +343,16 @@
                 android:layout_height="wrap_content"
                 android:text="Anisotropic Filtering (Texture Sharpness):"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_anisotropic"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <!-- Anti-Aliasing -->
             <TextView
@@ -402,44 +360,37 @@
                 android:layout_height="wrap_content"
                 android:text="Anti-Aliasing (FXAA):"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_antialiasing"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <!-- Native MSAA -->
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_native_msaa"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Native MSAA 2x (Geometry Anti-Aliasing)"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_native_msaa"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Native MSAA 2x (Geometry Anti-Aliasing)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="2dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Polygon smoothing. Keep disabled on mid-range phones."
-                android:textColor="#808080"
-                android:textSize="10sp"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginStart="32dp"
                 android:layout_marginBottom="12dp" />
 
             <!-- ========================================================= -->
@@ -455,47 +406,29 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="6dp" />
 
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_audio_mute"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Mute All Game Audio"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="6dp" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Mute All Game Audio"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_audio_mute"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_mnk_mode"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Enable Physical Keyboard &amp; Mouse Input"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_mnk_mode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Enable Physical Keyboard &amp; Mouse Input"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="12dp" />
 
             <!-- ========================================================= -->
             <!-- SECTION 4: GAME & SYSTEM                                  -->
@@ -510,79 +443,63 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="6dp" />
 
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_direct_host_resolve"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Direct Host Resolve (Fast GPU Memory Copy)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="6dp" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Direct Host Resolve (Fast GPU Memory Copy)"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_direct_host_resolve"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/cb_grant_privileges"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Xbox Live Gold Account Privileges"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-
-                <Switch
-                    android:id="@+id/sw_grant_privileges"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:minHeight="46dp"
+                android:paddingStart="8dp"
+                android:text="Xbox Live Gold Account Privileges"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:buttonTint="@color/nfsmw_amber"
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Player Gamertag:"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <EditText
                 android:id="@+id/et_gamertag"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
                 android:textColor="#FFFFFF"
-                android:textSize="13sp"
+                android:textSize="14sp"
                 android:paddingHorizontal="12dp"
                 android:singleLine="true"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Runtime Log Level:"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginBottom="2dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <Spinner
                 android:id="@+id/sp_log_level"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:background="@drawable/spinner_bg"
                 android:layout_marginBottom="4dp" />
 
@@ -590,9 +507,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ 'Error (Performance)' disables unnecessary logs, reducing I/O overhead on Android."
-                android:textColor="#808080"
-                android:textSize="10sp"
-                android:layout_marginBottom="10dp" />
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
 
             <TextView
                 android:id="@+id/tv_speed_label"
@@ -600,7 +517,8 @@
                 android:layout_height="wrap_content"
                 android:text="Simulation Speed: 100%"
                 android:textColor="#E0E0E0"
-                android:textSize="12sp"
+                android:textSize="13sp"
+                android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
 
             <SeekBar
@@ -629,16 +547,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="● Driver: using system (default)"
-                android:textColor="#A0A0A0"
-                android:textSize="12sp"
+                android:textColor="#D0D0D0"
+                android:textSize="13sp"
                 android:layout_marginBottom="4dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ℹ Install Turnip/Mesa to enable Vulkan 1.3+, shaderInt64 and BDA — essential for Adreno GPUs whose stock driver does not expose these features."
-                android:textColor="#808080"
-                android:textSize="10sp"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
                 android:layout_marginBottom="8dp" />
 
             <LinearLayout
@@ -650,25 +568,25 @@
                 <Button
                     android:id="@+id/btn_install_turnip"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="6dp"
                     android:background="@drawable/rom_button_bg"
                     android:text="📦 INSTALL (ZIP)"
                     android:textColor="@color/nfsmw_amber"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/btn_remove_turnip"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:layout_weight="1"
                     android:layout_marginStart="6dp"
                     android:background="@drawable/rom_button_bg"
                     android:text="🗑 REMOVE"
                     android:textColor="#FF5252"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -676,8 +594,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Download from: github.com/K11MCH1/AdrenoToolsDrivers — Adreno 6xx (650) or 7xx (730)"
-                android:textColor="#606060"
-                android:textSize="10sp"
+                android:textColor="#888888"
+                android:textSize="11sp"
                 android:layout_marginBottom="8dp" />
 
         </LinearLayout>
@@ -699,7 +617,7 @@
             android:background="@drawable/rom_button_bg"
             android:text="🔄 ANDROID DEFAULTS"
             android:textColor="@color/nfsmw_amber"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textStyle="bold" />
 
         <Button
@@ -711,7 +629,7 @@
             android:background="@drawable/rom_button_bg"
             android:text="💾 SAVE &amp; APPLY"
             android:textColor="@color/nfsmw_amber"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
 
