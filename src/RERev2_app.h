@@ -16,16 +16,19 @@ class Rerev2App : public rex::ReXApp {
         PPCImageConfig));
   }
 
-  // Override virtual hooks for customization:
-  // void OnPostInitLogging() override {}
-  // void OnPreSetup(rex::RuntimeConfig& config) override {}
-  // void OnLoadXexImage(std::string& xex_image) override {}
-  // void OnPostLoadXexImage() override {}
-  // void OnPostSetup() override {}
-  // void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {}
-  // std::unique_ptr<rex::ui::ImGuiDialog> CreateAchievementsOverlay() override;
-  // std::unique_ptr<rex::ui::AchievementNotificationDialog>
-  // CreateAchievementNotificationDialog() override;
-  // void OnShutdown() override {}
-  // void OnConfigurePaths(rex::PathConfig& paths) override {}
+  void OnConfigurePaths(rex::PathConfig& paths) override {
+    auto current_dir = std::filesystem::current_path();
+    if (paths.cache_root.empty() || paths.cache_root.string().find(".local/share") != std::string::npos) {
+      paths.cache_root = current_dir / "cache";
+    }
+    if (paths.user_data_root.empty() || paths.user_data_root.string().find(".local/share") != std::string::npos) {
+      paths.user_data_root = current_dir / "user_data";
+    }
+  }
+
+  void OnPreSetup(rex::RuntimeConfig& config) override {
+    if (config.gpu_plugin.empty()) {
+      config.gpu_plugin = "xenos";
+    }
+  }
 };

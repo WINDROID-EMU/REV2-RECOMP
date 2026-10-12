@@ -6,8 +6,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUILD_DIR="${SCRIPT_DIR}/build"
-RUNTIME_DIR="${SCRIPT_DIR}/runtime/linux-amd64"
+if [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" || "$*" == *"--arm64"* ]]; then
+    BUILD_DIR="${SCRIPT_DIR}/build-arm64"
+    RUNTIME_DIR="${SCRIPT_DIR}/runtime/linux-arm64"
+else
+    BUILD_DIR="${SCRIPT_DIR}/build"
+    RUNTIME_DIR="${SCRIPT_DIR}/runtime/linux-amd64"
+fi
 DEFAULT_GAME_ROOT="${SCRIPT_DIR}/../extracted"
 
 # 1. Locate game data root
@@ -53,13 +58,25 @@ fi
 export LD_LIBRARY_PATH="${BUILD_DIR}:${RUNTIME_DIR}:${LD_LIBRARY_PATH}"
 export DISPLAY="${DISPLAY:-:0}"
 
+mkdir -p "${SCRIPT_DIR}/cache" "${SCRIPT_DIR}/user_data"
+
 echo "Iniciando Resident Evil: Revelations 2 (REV2-RECOMP)..."
-echo "  Binário:   ${EXECUTABLE}"
-echo "  Game Root: ${GAME_DATA_ROOT}"
-echo "  Runtime:   ${RUNTIME_DIR}"
-if [[ "$*" == *"--game_data_root"* ]]; then
-    exec "${EXECUTABLE}" "$@"
-else
-    exec "${EXECUTABLE}" --game_data_root "${GAME_DATA_ROOT}" "$@"
+echo "  Binário:    ${EXECUTABLE}"
+echo "  Game Root:  ${GAME_DATA_ROOT}"
+echo "  Cache:      ${SCRIPT_DIR}/cache"
+echo "  User Data:  ${SCRIPT_DIR}/user_data"
+echo "  GPU Plugin: xenos"
+
+ARGS=(--game_data_root "${GAME_DATA_ROOT}")
+if [[ "$*" != *"--gpu_plugin"* ]]; then
+    ARGS+=(--gpu_plugin "xenos")
 fi
+if [[ "$*" != *"--cache_root"* ]]; then
+    ARGS+=(--cache_root "${SCRIPT_DIR}/cache")
+fi
+if [[ "$*" != *"--user_data_root"* ]]; then
+    ARGS+=(--user_data_root "${SCRIPT_DIR}/user_data")
+fi
+
+exec "${EXECUTABLE}" "${ARGS[@]}" "$@"
 

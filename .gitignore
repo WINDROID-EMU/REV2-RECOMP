@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+build-*/
 bin/
 out/
 CMakeFiles/
@@ -16,10 +17,21 @@ CMakeCache.txt
 *.lib
 *.so
 !runtime/**
+!android/rexglue-sdk/**
 *.dylib
 *.dll
 *.exe
 *.elf
+
+# Android artifacts and temporary files
+android/app/build/
+android/app/.cxx/
+android/.gradle/
+android/.android/
+android/local.properties
+android/app/src/main/jniLibs/
+*.apk
+*.aab
 
 # Game media and raw data
 *.iso
@@ -27,6 +39,8 @@ CMakeCache.txt
 *.bin
 *.xex
 extracted/
+cache/
+user_data/
 
 # IDE / System
 .vscode/

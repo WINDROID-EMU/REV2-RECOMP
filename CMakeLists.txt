@@ -10,6 +10,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(generated/rexglue.cmake)
 
+if(CMAKE_CROSSCOMPILING AND TARGET rex::rexglue)
+    set(_HOST_REXGLUE "${CMAKE_CURRENT_SOURCE_DIR}/../linux-amd64/bin/rexglue")
+    if(EXISTS "${_HOST_REXGLUE}")
+        set_target_properties(rex::rexglue PROPERTIES
+            IMPORTED_LOCATION "${_HOST_REXGLUE}"
+            IMPORTED_LOCATION_RELEASE "${_HOST_REXGLUE}"
+            IMPORTED_LOCATION_DEBUG "${_HOST_REXGLUE}"
+            IMPORTED_LOCATION_RELWITHDEBINFO "${_HOST_REXGLUE}"
+        )
+    endif()
+endif()
+
 # Sources
 set(REREV2_SOURCES
     src/main.cpp
@@ -21,4 +33,4 @@ else()
     add_executable(RERev2 ${REREV2_SOURCES})
 endif()
 
-rexglue_setup_target(RERev2)
+rexglue_setup_target(RERev2 GPU_PLUGINS xenos)

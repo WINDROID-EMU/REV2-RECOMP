@@ -498,9 +498,98 @@ void ExecutePpcThunk(PPCContext& ctx, uint8_t* base) {
             if (op & 1) UpdateCR0(ctx, GetGPR(ctx, rA).u32);
             break;
           }
+          case 21: { // ldx
+            uint32_t ea = (rA == 0) ? GetGPR(ctx, rB).u32 : (GetGPR(ctx, rA).u32 + GetGPR(ctx, rB).u32);
+            GetGPR(ctx, rD).u64 = REX_LOAD_U64(ea);
+            break;
+          }
+          case 149: { // stdx
+            uint32_t ea = (rA == 0) ? GetGPR(ctx, rB).u32 : (GetGPR(ctx, rA).u32 + GetGPR(ctx, rB).u32);
+            REX_STORE_U64(ea, GetGPR(ctx, rD).u64);
+            break;
+          }
+          case 341: { // lwax
+            uint32_t ea = (rA == 0) ? GetGPR(ctx, rB).u32 : (GetGPR(ctx, rA).u32 + GetGPR(ctx, rB).u32);
+            GetGPR(ctx, rD).s64 = (int64_t)(int32_t)REX_LOAD_U32(ea);
+            break;
+          }
+          case 598: // sync
+          case 854: { // eieio
+            std::atomic_thread_fence(std::memory_order_seq_cst);
+            break;
+          }
+          case 278: // dcbt
+          case 758: // dcbtst
+          case 86: { // dcbf
+            // Cache line hints: no-op in software emulation
+            break;
+          }
           default:
             break;
         }
+        pc += 4;
+        continue;
+      }
+
+      case 33: { // lwzu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        GetGPR(ctx, rD).u64 = REX_LOAD_U32(ea);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 35: { // lbzu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        GetGPR(ctx, rD).u64 = REX_LOAD_U8(ea);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 37: { // stwu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        REX_STORE_U32(ea, GetGPR(ctx, rD).u32);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 39: { // stbu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        REX_STORE_U8(ea, GetGPR(ctx, rD).u8);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 41: { // lhzu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        GetGPR(ctx, rD).u64 = REX_LOAD_U16(ea);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 42: { // lha
+        uint32_t ea = (rA == 0) ? (uint32_t)simm : (uint32_t)(GetGPR(ctx, rA).u32 + simm);
+        GetGPR(ctx, rD).s64 = (int64_t)(int16_t)REX_LOAD_U16(ea);
+        pc += 4;
+        continue;
+      }
+
+      case 43: { // lhau
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        GetGPR(ctx, rD).s64 = (int64_t)(int16_t)REX_LOAD_U16(ea);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 45: { // sthu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        REX_STORE_U16(ea, GetGPR(ctx, rD).u16);
+        GetGPR(ctx, rA).u64 = ea;
         pc += 4;
         continue;
       }
@@ -513,10 +602,92 @@ void ExecutePpcThunk(PPCContext& ctx, uint8_t* base) {
         continue;
       }
 
+      case 49: { // lfsu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        uint32_t u = REX_LOAD_U32(ea);
+        GetFPR(ctx, rD).f64 = (double)std::bit_cast<float>(u);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 50: { // lfd
+        uint32_t ea = (rA == 0) ? (uint32_t)simm : (uint32_t)(GetGPR(ctx, rA).u32 + simm);
+        uint64_t u = REX_LOAD_U64(ea);
+        GetFPR(ctx, rD).f64 = std::bit_cast<double>(u);
+        pc += 4;
+        continue;
+      }
+
+      case 51: { // lfdu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        uint64_t u = REX_LOAD_U64(ea);
+        GetFPR(ctx, rD).f64 = std::bit_cast<double>(u);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
       case 52: { // stfs
         uint32_t ea = (rA == 0) ? (uint32_t)simm : (uint32_t)(GetGPR(ctx, rA).u32 + simm);
         float f = (float)GetFPR(ctx, rD).f64;
         REX_STORE_U32(ea, std::bit_cast<uint32_t>(f));
+        pc += 4;
+        continue;
+      }
+
+      case 53: { // stfsu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        float f = (float)GetFPR(ctx, rD).f64;
+        REX_STORE_U32(ea, std::bit_cast<uint32_t>(f));
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 54: { // stfd
+        uint32_t ea = (rA == 0) ? (uint32_t)simm : (uint32_t)(GetGPR(ctx, rA).u32 + simm);
+        uint64_t u = std::bit_cast<uint64_t>(GetFPR(ctx, rD).f64);
+        REX_STORE_U64(ea, u);
+        pc += 4;
+        continue;
+      }
+
+      case 55: { // stfdu
+        uint32_t ea = GetGPR(ctx, rA).u32 + simm;
+        uint64_t u = std::bit_cast<uint64_t>(GetFPR(ctx, rD).f64);
+        REX_STORE_U64(ea, u);
+        GetGPR(ctx, rA).u64 = ea;
+        pc += 4;
+        continue;
+      }
+
+      case 58: { // ld, ldu, lwa (DS-form: opcd[6], rD[5], rA[5], ds[14], xo[2])
+        uint32_t xo = op & 3;
+        int32_t ds = (int32_t)((int16_t)(op & 0xFFFC));
+        uint32_t ea = (rA == 0) ? (uint32_t)ds : (uint32_t)(GetGPR(ctx, rA).u32 + ds);
+        if (xo == 0) { // ld
+          GetGPR(ctx, rD).u64 = REX_LOAD_U64(ea);
+        } else if (xo == 1) { // ldu
+          GetGPR(ctx, rD).u64 = REX_LOAD_U64(ea);
+          GetGPR(ctx, rA).u64 = ea;
+        } else if (xo == 2) { // lwa
+          GetGPR(ctx, rD).s64 = (int64_t)(int32_t)REX_LOAD_U32(ea);
+        }
+        pc += 4;
+        continue;
+      }
+
+      case 62: { // std, stdu (DS-form)
+        uint32_t xo = op & 3;
+        int32_t ds = (int32_t)((int16_t)(op & 0xFFFC));
+        uint32_t ea = (rA == 0) ? (uint32_t)ds : (uint32_t)(GetGPR(ctx, rA).u32 + ds);
+        if (xo == 0) { // std
+          REX_STORE_U64(ea, GetGPR(ctx, rD).u64);
+        } else if (xo == 1) { // stdu
+          REX_STORE_U64(ea, GetGPR(ctx, rD).u64);
+          GetGPR(ctx, rA).u64 = ea;
+        }
         pc += 4;
         continue;
       }
