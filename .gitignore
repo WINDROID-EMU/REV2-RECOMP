@@ -1,0 +1,35 @@
+# Build artifacts
+build/
+bin/
+out/
+CMakeFiles/
+CMakeCache.txt
+*.cmake.user
+*.dir/
+
+# Compiled objects and binaries
+*.o
+*.obj
+*.gch
+*.pch
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.elf
+
+# Game media and raw data
+*.iso
+*.arc
+*.bin
+*.xex
+extracted/
+
+# IDE / System
+.vscode/
+.idea/
+.cache/
+.DS_Store
+*.log
