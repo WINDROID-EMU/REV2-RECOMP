@@ -5,11 +5,18 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Surface;
+import android.view.TextureView;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
@@ -80,10 +87,16 @@ public class TitleActivity extends Activity {
     private View rootLayout;
     private View startPromptContainer;
     private TextView tvPressStart;
+    private static final String TAG = "RERev2-TitleActivity";
+
     private TextView tvRomStatus;
     private Button btnSelectRom;
     private Button btnSettings;
     private View fadeOverlay;
+
+    private TextureView videoTitleView;
+    private MediaPlayer mediaPlayer;
+    private Surface videoSurface;
 
     private String verifiedGamePath = null;
     private boolean isStartingGame = false;
@@ -127,6 +140,9 @@ public class TitleActivity extends Activity {
             });
         }
 
+        // Inicializa vídeo em loop da tela de título
+        setupVideoBackground();
+
         // Verifica permissões e caminhos salvos
         checkStoragePermissions();
         checkAndLoadGamePath();
@@ -137,6 +153,156 @@ public class TitleActivity extends Activity {
     protected void onResume() {
         super.onResume();
         applyImmersiveMode();
+        if (mediaPlayer != null && !isStartingGame) {
+            try {
+                mediaPlayer.start();
+            } catch (Exception ignored) {}
+        } else if (videoSurface != null && !isStartingGame) {
+            initAndStartMediaPlayer();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mediaPlayer != null) {
+            try {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.pause();
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        releaseMediaPlayer();
+        if (videoSurface != null) {
+            try {
+                videoSurface.release();
+            } catch (Exception ignored) {}
+            videoSurface = null;
+        }
+        super.onDestroy();
+    }
+
+    private void setupVideoBackground() {
+        videoTitleView = findViewById(R.id.video_title);
+        if (videoTitleView == null) return;
+
+        videoTitleView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            @Override
+            public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
+                videoSurface = new Surface(surfaceTexture);
+                initAndStartMediaPlayer();
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
+                if (mediaPlayer != null) {
+                    adjustVideoAspectRatio(mediaPlayer.getVideoWidth(), mediaPlayer.getVideoHeight());
+                }
+            }
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+                releaseMediaPlayer();
+                if (videoSurface != null) {
+                    videoSurface.release();
+                    videoSurface = null;
+                }
+                return true;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+            }
+        });
+    }
+
+    private void initAndStartMediaPlayer() {
+        if (videoSurface == null || isStartingGame) return;
+
+        try {
+            if (mediaPlayer == null) {
+                mediaPlayer = new MediaPlayer();
+            } else {
+                mediaPlayer.reset();
+            }
+
+            mediaPlayer.setSurface(videoSurface);
+
+            AssetFileDescriptor afd = getResources().openRawResourceFd(R.raw.title);
+            if (afd != null) {
+                mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+                afd.close();
+            } else {
+                Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.title);
+                mediaPlayer.setDataSource(this, videoUri);
+            }
+
+            mediaPlayer.setLooping(true);
+            mediaPlayer.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
+
+            boolean isMuted = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_AUDIO_MUTE, false);
+            if (isMuted) {
+                mediaPlayer.setVolume(0.0f, 0.0f);
+            } else {
+                mediaPlayer.setVolume(1.0f, 1.0f);
+            }
+
+            mediaPlayer.setOnVideoSizeChangedListener((mp, width, height) -> {
+                adjustVideoAspectRatio(width, height);
+            });
+
+            mediaPlayer.setOnPreparedListener(mp -> {
+                adjustVideoAspectRatio(mp.getVideoWidth(), mp.getVideoHeight());
+                if (!isStartingGame) {
+                    mp.start();
+                }
+            });
+
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.w(TAG, "Title video playback error: " + what + ", " + extra);
+                return true;
+            });
+
+            mediaPlayer.prepareAsync();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize title video", e);
+        }
+    }
+
+    private void adjustVideoAspectRatio(int videoWidth, int videoHeight) {
+        if (videoTitleView == null || videoWidth <= 0 || videoHeight <= 0) return;
+
+        int viewWidth = videoTitleView.getWidth();
+        int viewHeight = videoTitleView.getHeight();
+        if (viewWidth <= 0 || viewHeight <= 0) return;
+
+        double scaleX = (double) viewWidth / videoWidth;
+        double scaleY = (double) viewHeight / videoHeight;
+        double scale = Math.max(scaleX, scaleY);
+
+        float scaledWidth = (float) (videoWidth * scale);
+        float scaledHeight = (float) (videoHeight * scale);
+
+        Matrix matrix = new Matrix();
+        matrix.setScale(scaledWidth / viewWidth, scaledHeight / viewHeight, viewWidth / 2f, viewHeight / 2f);
+        videoTitleView.setTransform(matrix);
+    }
+
+    private void releaseMediaPlayer() {
+        if (mediaPlayer != null) {
+            try {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+                mediaPlayer.reset();
+                mediaPlayer.release();
+            } catch (Exception ignored) {}
+            mediaPlayer = null;
+        }
     }
 
     @Override
@@ -509,6 +675,12 @@ public class TitleActivity extends Activity {
             startPromptContainer.setScaleY(1.1f);
         }
 
+        if (mediaPlayer != null) {
+            try {
+                mediaPlayer.setVolume(0.0f, 0.0f);
+            } catch (Exception ignored) {}
+        }
+
         if (fadeOverlay != null) {
             fadeOverlay.setVisibility(View.VISIBLE);
             fadeOverlay.animate()
@@ -523,6 +695,8 @@ public class TitleActivity extends Activity {
 
     private void launchNativeGame() {
         try {
+            releaseMediaPlayer();
+
             // Garante que as configurações estejam salvas antes de iniciar a NativeActivity
             writeTomlConfiguration(true);
             extractBundledShaders(getExternalFilesDir(null));

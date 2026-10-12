@@ -6,30 +6,26 @@
     android:background="@color/nfsmw_black"
     android:keepScreenOn="true">
 
-    <!-- Layer 1: Ambient Background preenchendo 100% da tela em qualquer proporção (centerCrop) -->
+    <!-- Layer 1: Placeholder Background (prevent black flash while video loads) -->
     <ImageView
         android:id="@+id/bg_ambient"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/title_bg"
-        android:alpha="0.85"
         android:contentDescription="@null" />
 
-    <!-- Layer 2: Vinheta cinematográfica suave nas bordas -->
+    <!-- Layer 2: Looping Title Video (TextureView) -->
+    <TextureView
+        android:id="@+id/video_title"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Layer 3: Vinheta cinematográfica suave nas bordas -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/ambient_vignette" />
-
-    <!-- Layer 3: Enquadramento Principal 100% nítido e com proporção original preservada (fitCenter) -->
-    <ImageView
-        android:id="@+id/bg_main"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/title_bg"
-        android:contentDescription="@string/app_name" />
 
     <!-- Layer 4: Interface interativa sobreposta -->
     <RelativeLayout
