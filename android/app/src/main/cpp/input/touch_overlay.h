@@ -74,7 +74,7 @@ class TouchOverlay {
   uint32_t screen_width_ = 1920;
   uint32_t screen_height_ = 1080;
 
-  bool enabled_ = true;
+  bool enabled_ = false;
   float opacity_ = 0.82f;
 
   VirtualControlLayout layout_{};

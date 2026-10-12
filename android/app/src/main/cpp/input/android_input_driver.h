@@ -29,7 +29,7 @@ class AndroidInputDriver final : public InputDriver {
   TouchOverlay& touch_overlay() { return touch_overlay_; }
   const TouchOverlay& touch_overlay() const { return touch_overlay_; }
 
-  void SetVirtualControlsState(uint16_t buttons, float lx, float ly, float lt, float rt);
+  void SetVirtualControlsState(uint16_t buttons, float lx, float ly, float rx, float ry, float lt, float rt);
 
  private:
   std::mutex state_mutex_;
@@ -41,6 +41,8 @@ class AndroidInputDriver final : public InputDriver {
   uint16_t virtual_buttons_ = 0;
   float virtual_lx_ = 0.0f;
   float virtual_ly_ = 0.0f;
+  float virtual_rx_ = 0.0f;
+  float virtual_ry_ = 0.0f;
   float virtual_lt_ = 0.0f;
   float virtual_rt_ = 0.0f;
 

@@ -49,11 +49,15 @@ void AndroidInputDriver::EnumerateDevices(std::vector<DeviceInfo>& out) {
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_capcom_rerev2_GameActivity_nativeSetVirtualGamepad(
-    JNIEnv* env, jclass clazz, jint buttons, jfloat thumb_lx, jfloat thumb_ly,
+    JNIEnv* env, jclass clazz, jint buttons,
+    jfloat thumb_lx, jfloat thumb_ly,
+    jfloat thumb_rx, jfloat thumb_ry,
     jfloat left_trigger, jfloat right_trigger) {
   auto* driver = rex::input::android::AndroidInputDriver::GetActiveDriver();
   if (driver) {
-    driver->SetVirtualControlsState(static_cast<uint16_t>(buttons), thumb_lx, thumb_ly, left_trigger, right_trigger);
+    driver->SetVirtualControlsState(static_cast<uint16_t>(buttons),
+                                    thumb_lx, thumb_ly, thumb_rx, thumb_ry,
+                                    left_trigger, right_trigger);
   } else {
     static int s_null_cnt = 0;
     if (++s_null_cnt % 30 == 1) {
@@ -90,7 +94,7 @@ void RegisterVirtualGamepadJNI(void* java_vm, void* activity_obj) {
 
   static const JNINativeMethod methods[] = {
       { const_cast<char*>("nativeSetVirtualGamepad"),
-        const_cast<char*>("(IFFFF)V"),
+        const_cast<char*>("(IFFFFFF)V"),
         reinterpret_cast<void*>(&Java_com_capcom_rerev2_GameActivity_nativeSetVirtualGamepad) }
   };
 
@@ -107,11 +111,13 @@ void RegisterVirtualGamepadJNI(void* java_vm, void* activity_obj) {
   env->DeleteLocalRef(clazz);
 }
 
-void AndroidInputDriver::SetVirtualControlsState(uint16_t buttons, float lx, float ly, float lt, float rt) {
+void AndroidInputDriver::SetVirtualControlsState(uint16_t buttons, float lx, float ly, float rx, float ry, float lt, float rt) {
   std::lock_guard<std::mutex> lock(state_mutex_);
   virtual_buttons_ = buttons;
   virtual_lx_ = lx;
   virtual_ly_ = ly;
+  virtual_rx_ = rx;
+  virtual_ry_ = ry;
   virtual_lt_ = lt;
   virtual_rt_ = rt;
 
@@ -136,6 +142,12 @@ X_RESULT AndroidInputDriver::GetDeviceState(DeviceId id, X_INPUT_STATE* out_stat
   }
   if (std::abs(virtual_ly_) > 0.05f) {
     state.thumb_ly = static_cast<int16_t>(std::clamp(virtual_ly_, -1.0f, 1.0f) * 32767.0f);
+  }
+  if (std::abs(virtual_rx_) > 0.05f) {
+    state.thumb_rx = static_cast<int16_t>(std::clamp(virtual_rx_, -1.0f, 1.0f) * 32767.0f);
+  }
+  if (std::abs(virtual_ry_) > 0.05f) {
+    state.thumb_ry = static_cast<int16_t>(std::clamp(virtual_ry_, -1.0f, 1.0f) * 32767.0f);
   }
   if (virtual_lt_ > 0.0f) {
     state.left_trigger = std::max(state.left_trigger, static_cast<uint8_t>(std::clamp(virtual_lt_, 0.0f, 1.0f) * 255.0f));
@@ -252,6 +264,10 @@ void AndroidInputDriver::HandleGamepadMotionEvent(const AInputEvent* event) {
   // Right stick
   float rx = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_Z, 0);
   float ry = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_RZ, 0);
+  if (std::abs(rx) < 0.001f && std::abs(ry) < 0.001f) {
+    rx = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_RX, 0);
+    ry = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_RY, 0);
+  }
 
   // Triggers
   float lt = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_LTRIGGER, 0);

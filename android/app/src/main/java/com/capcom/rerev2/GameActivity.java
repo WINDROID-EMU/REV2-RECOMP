@@ -34,7 +34,7 @@ public class GameActivity extends NativeActivity {
     public static final int BTN_Y              = 0x8000;
 
     public static native void nativeSetVirtualGamepad(
-            int buttons, float thumbLx, float thumbLy, float leftTrigger, float rightTrigger);
+            int buttons, float thumbLx, float thumbLy, float thumbRx, float thumbRy, float leftTrigger, float rightTrigger);
 
     private VirtualControllerInputView controlsView;
     private PopupWindow controlsPopup;
@@ -82,7 +82,7 @@ public class GameActivity extends NativeActivity {
 // Logging disabled for 60fps input performance
 
             try {
-                nativeSetVirtualGamepad(xinputButtons, lx, -ly, lt, rt);
+                nativeSetVirtualGamepad(xinputButtons, lx, -ly, rx, -ry, lt, rt);
             } catch (UnsatisfiedLinkError err) {
                 Log.e(TAG, "nativeSetVirtualGamepad call failed", err);
             }
