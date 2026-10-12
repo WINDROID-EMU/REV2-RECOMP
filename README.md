@@ -77,15 +77,19 @@ The compiled binary will be placed at `build/RERev2` (approx. 445 MB ELF executa
 
 Resident Evil: Revelations 2 requires original retail game assets (`Game.arc`, `Core.arc`, movies, shaders, audio) extracted from the Xbox 360 release (STFS package `5841144C`).
 
-Launch with:
+### Quick Launch (Using Included Runtime)
+The repository bundles the complete native ReXGlue Linux x86_64 runtime libraries in `runtime/linux-amd64/`. You can launch the game directly using the provided launcher:
+
+```bash
+# Executar diretamente usando o script launcher
+./run.sh --game_data_root "/path/to/extracted/game_assets"
+```
+
+### Manual Execution
 ```bash
 ./build/RERev2 --game_data_root "/path/to/extracted/game_assets"
 ```
-
-For systems with dynamic linker library paths:
-```bash
-DISPLAY=:0 LD_LIBRARY_PATH="/path/to/rexglue/lib:$LD_LIBRARY_PATH" ./build/RERev2 --game_data_root "/path/to/extracted/game_assets"
-```
+*(The binary automatically resolves runtime libraries from its directory via `$ORIGIN` or from `runtime/linux-amd64`).*
 
 ---
 

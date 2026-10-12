@@ -15,6 +15,7 @@ CMakeCache.txt
 *.a
 *.lib
 *.so
+!runtime/**
 *.dylib
 *.dll
 *.exe
