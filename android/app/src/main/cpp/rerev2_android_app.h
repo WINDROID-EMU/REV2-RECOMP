@@ -44,3 +44,32 @@ class Rerev2AndroidApp final : public Rerev2App {
 };
 
 }  // namespace rex::android
+
+#include "src/ppc_thunk_dispatcher.h"
+
+// Fast native path for MT Framework inline getter 0x82F57288
+inline void sub_82F57288(PPCContext& ctx, uint8_t* base) {
+  uint32_t r11 = 0x83AC0000;
+  r11 = REX_LOAD_U32(r11 + 0x6C20);
+  ctx.r11.u64 = r11;
+  ctx.r3.u64 = REX_LOAD_U64(r11 + 0x28);
+}
+
+namespace rex::runtime {
+inline PPCFunc* ResolveIndirectFunction(uint32_t guest_address) {
+  if (guest_address == 0x82F57288) {
+    return &sub_82F57288;
+  }
+
+  if (auto* rt = rex::Runtime::instance()) {
+    if (auto* fd = rt->function_dispatcher()) {
+      if (auto* fn = fd->GetFunction(guest_address)) {
+        return fn;
+      }
+    }
+  }
+
+  return &ExecutePpcThunk;
+}
+}  // namespace rex::runtime
+

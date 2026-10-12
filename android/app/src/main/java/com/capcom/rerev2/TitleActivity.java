@@ -908,7 +908,7 @@ public class TitleActivity extends Activity {
 
             String res = prefs.getString(KEY_RESOLUTION, "720p");
             int scale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
-            String plugin = prefs.getString(KEY_GPU_PLUGIN, "plume");
+            String plugin = prefs.getString(KEY_GPU_PLUGIN, "xenos");
             boolean vsync = prefs.getBoolean(KEY_VSYNC, true);
             boolean stretchScreen = prefs.getBoolean(KEY_STRETCH_SCREEN, true);
             String edram = prefs.getString(KEY_EDRAM_PATH, "rtv");
@@ -941,7 +941,7 @@ public class TitleActivity extends Activity {
 
             StringBuilder toml = new StringBuilder();
             toml.append("# ============================================================================").append((char) 10);
-            toml.append("#  NFSMW Recompiled - Android Configuration (Gerado pelo TitleActivity)").append((char) 10);
+            toml.append("#  Resident Evil: Revelations 2 - Android Configuration (Gerado pelo TitleActivity)").append((char) 10);
             toml.append("# ============================================================================").append((char) 10).append((char) 10);
 
             String vulkanEdram = "rov".equalsIgnoreCase(edram) || "fsi".equalsIgnoreCase(edram) ? "fsi" : "fbo";
@@ -997,7 +997,7 @@ public class TitleActivity extends Activity {
             // Salva no armazenamento de arquivos externo do app
             File extDir = getExternalFilesDir(null);
             if (extDir != null) {
-                File tomlFile = new File(extDir, "nfsmw.toml");
+                File tomlFile = new File(extDir, "rerev2.toml");
                 if (forceOverwrite || !tomlFile.exists()) {
                     try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(tomlFile), StandardCharsets.UTF_8)) {
                         writer.write(tomlContent);
@@ -1008,7 +1008,7 @@ public class TitleActivity extends Activity {
             // Salva também no armazenamento interno
             File intDir = getFilesDir();
             if (intDir != null) {
-                File tomlFile = new File(intDir, "nfsmw.toml");
+                File tomlFile = new File(intDir, "rerev2.toml");
                 if (forceOverwrite || !tomlFile.exists()) {
                     try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(tomlFile), StandardCharsets.UTF_8)) {
                         writer.write(tomlContent);
