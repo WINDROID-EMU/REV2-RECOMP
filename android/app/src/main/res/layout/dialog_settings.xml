@@ -243,28 +243,6 @@
                 android:layout_marginStart="32dp"
                 android:layout_marginBottom="12dp" />
 
-            <!-- Dynamic Shadows & Lights Optimization -->
-            <CheckBox
-                android:id="@+id/cb_cull_lights"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="46dp"
-                android:paddingStart="8dp"
-                android:text="Otimizar Sombras &amp; Luzes Dinâmicas"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:buttonTint="@color/rerev2_amber"
-                android:layout_marginBottom="2dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="ℹ Oclui passes caros de sombras e luzes secundárias, reduzindo draws de ~1.000 para ~130 e resolves de ~180 para ~35."
-                android:textColor="#B0B0B0"
-                android:textSize="12sp"
-                android:layout_marginStart="32dp"
-                android:layout_marginBottom="12dp" />
-
             <!-- Pipeline Threads -->
             <TextView
                 android:layout_width="wrap_content"
