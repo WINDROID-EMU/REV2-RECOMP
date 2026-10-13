@@ -371,7 +371,7 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("async_shader_compilation", "true");
   SetDefaultFlag("vulkan_async_skip_incomplete_frames", "false");
   SetDefaultFlag("vulkan_submit_on_primary_buffer_end", "false");
-  SetDefaultFlag("vulkan_dynamic_rendering", "false");
+  SetDefaultFlag("vulkan_dynamic_rendering", "true");
   SetDefaultFlag("native_2x_msaa", "false");
   SetDefaultFlag("gamma_render_target_as_unorm16", "false");
   SetDefaultFlag("depth_transfer_not_equal_test", "false");

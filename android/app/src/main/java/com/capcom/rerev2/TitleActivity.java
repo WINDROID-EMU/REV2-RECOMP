@@ -924,11 +924,11 @@ public class TitleActivity extends Activity {
         int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
         spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 1));
 
-        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
-        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 2));
+        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 256);
+        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 0));
 
-        int curAniso = prefs.getInt(KEY_ANISOTROPIC, 0);
-        spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 0));
+        int curAniso = prefs.getInt(KEY_ANISOTROPIC, 1);
+        spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 1));
 
         String curAa = prefs.getString(KEY_ANTIALIASING, "none");
         spAntialiasing.setSelection(findStringIndex(aaValues, curAa, 0));
@@ -936,10 +936,10 @@ public class TitleActivity extends Activity {
         String curLog = prefs.getString(KEY_LOG_LEVEL, "info");
         spLogLevel.setSelection(findStringIndex(logValues, curLog, 2));
 
-        cbVsync.setChecked(prefs.getBoolean(KEY_VSYNC, false));
+        cbVsync.setChecked(prefs.getBoolean(KEY_VSYNC, true));
         cbStretchScreen.setChecked(prefs.getBoolean(KEY_STRETCH_SCREEN, true));
         cbAsyncShaders.setChecked(prefs.getBoolean(KEY_ASYNC_SHADERS, true));
-        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, true));
+        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, false));
         cbGpu3dTo2d.setChecked(prefs.getBoolean(KEY_GPU_3D_TO_2D, true));
         cbReadbackResolve.setChecked(prefs.getBoolean(KEY_READBACK_RESOLVE, false));
         cbNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
@@ -1103,16 +1103,16 @@ public class TitleActivity extends Activity {
             String res = prefs.getString(KEY_RESOLUTION, "720p");
             int scale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
             String plugin = prefs.getString(KEY_GPU_PLUGIN, "xenos");
-            boolean vsync = prefs.getBoolean(KEY_VSYNC, false);
+            boolean vsync = prefs.getBoolean(KEY_VSYNC, true);
             boolean stretchScreen = prefs.getBoolean(KEY_STRETCH_SCREEN, true);
             String edram = prefs.getString(KEY_EDRAM_PATH, "rtv");
             boolean asyncShaders = prefs.getBoolean(KEY_ASYNC_SHADERS, true);
-            boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, true);
+            boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, false);
             int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
-            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
+            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 256);
             boolean gpu3dTo2d = prefs.getBoolean(KEY_GPU_3D_TO_2D, true);
             boolean readback = prefs.getBoolean(KEY_READBACK_RESOLVE, false);
-            int aniso = prefs.getInt(KEY_ANISOTROPIC, 0);
+            int aniso = prefs.getInt(KEY_ANISOTROPIC, 1);
             String aa = prefs.getString(KEY_ANTIALIASING, "none");
             boolean nativeMsaa = prefs.getBoolean(KEY_NATIVE_MSAA, false);
             boolean mute = prefs.getBoolean(KEY_AUDIO_MUTE, false);
@@ -1143,7 +1143,7 @@ public class TitleActivity extends Activity {
             toml.append("render_target_path_vulkan = ").append((char) 34).append(vulkanEdram).append((char) 34).append((char) 10);
             toml.append("vulkan_async_skip_incomplete_frames = ").append(asyncSkip ? "true" : "false").append((char) 10);
             toml.append("vulkan_submit_on_primary_buffer_end = false").append((char) 10);
-            toml.append("vulkan_dynamic_rendering = false").append((char) 10);
+            toml.append("vulkan_dynamic_rendering = true").append((char) 10);
             toml.append("gpu_backend = ").append((char) 34).append("vulkan").append((char) 34).append((char) 10);
             toml.append("gpu_plugin = ").append((char) 34).append(plugin).append((char) 34).append((char) 10);
             toml.append("gpu = ").append((char) 34).append(plugin).append((char) 34).append((char) 10).append((char) 10);
