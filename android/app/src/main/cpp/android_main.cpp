@@ -368,10 +368,11 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("render_target_path_d3d12", "rtv");
   SetDefaultFlag("render_target_path_vulkan", "fbo");
   SetDefaultFlag("readback_resolve", "none");
+  SetDefaultFlag("vulkan_readback_resolve", "false");
   SetDefaultFlag("async_shader_compilation", "true");
   SetDefaultFlag("vulkan_async_skip_incomplete_frames", "false");
   SetDefaultFlag("vulkan_submit_on_primary_buffer_end", "false");
-  SetDefaultFlag("vulkan_dynamic_rendering", "true");
+  SetDefaultFlag("vulkan_dynamic_rendering", "false");
   SetDefaultFlag("native_2x_msaa", "false");
   SetDefaultFlag("gamma_render_target_as_unorm16", "false");
   SetDefaultFlag("depth_transfer_not_equal_test", "false");
@@ -381,17 +382,34 @@ void android_main(struct android_app* state) {
   // Previous values (96/512 MB) were backwards and caused memory contention.
   SetDefaultFlag("texture_cache_memory_limit_render_to_texture", "16");
   SetDefaultFlag("texture_cache_memory_limit_soft", "256");
-  SetDefaultFlag("vulkan_pipeline_creation_threads", "2");
+  SetDefaultFlag("vulkan_pipeline_creation_threads", "4");
   SetDefaultFlag("store_shaders", "true");
-  SetDefaultFlag("vsync", "true");
+  SetDefaultFlag("vsync", "false");
   SetDefaultFlag("mnk_mode", "false");
   SetDefaultFlag("present_letterbox", "false");
 
-  // 1280x720 Native Xbox 360 resolution fits within Adreno 650/730 GMEM on-chip tile memory
+  // Mobile Adreno GPU present & pipeline optimizations
+  SetDefaultFlag("execute_unclipped_draw_vs_on_cpu", "false");
+  SetDefaultFlag("execute_unclipped_draw_vs_on_cpu_for_psi_render_backend", "false");
+  SetDefaultFlag("execute_unclipped_draw_vs_on_cpu_with_scissor", "false");
+  SetDefaultFlag("readback_memexport", "false");
+  SetDefaultFlag("readback_memexport_fast", "false");
+  SetDefaultFlag("vulkan_readback_memexport", "false");
+  SetDefaultFlag("occlusion_query_enable", "false");
+  SetDefaultFlag("vulkan_allow_present_mode_mailbox", "true");
+  SetDefaultFlag("vulkan_allow_present_mode_immediate", "true");
+  SetDefaultFlag("vulkan_allow_present_mode_fifo_relaxed", "true");
+  SetDefaultFlag("force_convert_quad_lists_to_triangle_lists", "true");
+  SetDefaultFlag("vulkan_force_convert_quad_lists_to_triangle_lists", "true");
+  SetDefaultFlag("force_convert_triangle_fans_to_lists", "true");
+  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "true");
+  SetDefaultFlag("mrt_edram_used_range_clamp_to_min", "true");
+
+  // Mobile viewport & texture fetch optimizations (aniso 0 = bilinear filtering for maximum bandwidth)
   SetDefaultFlag("video_mode_width", "1280");
   SetDefaultFlag("video_mode_height", "720");
   SetDefaultFlag("resolution_scale", "1");
-  SetDefaultFlag("anisotropic_override", "1");
+  SetDefaultFlag("anisotropic_override", "0");
 
   // Adreno performance & logging optimizations
   SetDefaultFlag("query_occlusion_fake_sample_count", "1");

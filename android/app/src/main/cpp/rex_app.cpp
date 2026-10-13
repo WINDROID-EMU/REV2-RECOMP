@@ -78,6 +78,7 @@ static std::unordered_set<pthread_t> g_joined_or_detached_threads;
 static int (*g_real_pthread_create)(pthread_t*, const pthread_attr_t*, void*(*)(void*), void*) = nullptr;
 static int (*g_real_pthread_join)(pthread_t, void**) = nullptr;
 static int (*g_real_pthread_detach)(pthread_t) = nullptr;
+static int (*g_real_pthread_setname_np)(pthread_t, const char*) = nullptr;
 
 static bool IsPointerMapped(const void* ptr) {
   uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
@@ -342,6 +343,21 @@ static int HookedPthreadJoin(pthread_t thread, void** retval) {
   return res;
 }
 
+static int HookedPthreadSetNameNp(pthread_t thread, const char* name) {
+  if (!g_real_pthread_setname_np) {
+    g_real_pthread_setname_np = (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
+  }
+  int res = g_real_pthread_setname_np ? g_real_pthread_setname_np(thread, name) : 0;
+  if (name) {
+    if (strstr(name, "XThread") != nullptr || strstr(name, "GPU") != nullptr || strstr(name, "Main") != nullptr) {
+      ConfigurePerformanceThread();
+      __android_log_print(ANDROID_LOG_INFO, "RexThreadPerf",
+                          "Configured high performance for thread '%s' (nice -10, Big/Prime cores)", name);
+    }
+  }
+  return res;
+}
+
 static bool PatchGotSlot(void* target_addr, void* new_func, void** old_func) {
   if (!target_addr) return false;
   uintptr_t page_size = sysconf(_SC_PAGESIZE);
@@ -366,6 +382,7 @@ struct LibraryGotSlots {
   void** got_pthread_create = nullptr;
   void** got_pthread_join = nullptr;
   void** got_pthread_detach = nullptr;
+  void** got_pthread_setname_np = nullptr;
 };
 
 static void ScanLibraryGot(const struct dl_phdr_info* info, LibraryGotSlots& out_slots) {
@@ -427,6 +444,8 @@ static void ScanLibraryGot(const struct dl_phdr_info* info, LibraryGotSlots& out
         out_slots.got_pthread_join = slot;
       } else if (strcmp(sym_name, "pthread_detach") == 0 && !out_slots.got_pthread_detach) {
         out_slots.got_pthread_detach = slot;
+      } else if (strcmp(sym_name, "pthread_setname_np") == 0 && !out_slots.got_pthread_setname_np) {
+        out_slots.got_pthread_setname_np = slot;
       }
     }
   };
@@ -438,10 +457,10 @@ static void ScanLibraryGot(const struct dl_phdr_info* info, LibraryGotSlots& out
 static int DlIteratePatchCallback(struct dl_phdr_info* info, size_t, void*) {
   if (!info->dlpi_name) return 0;
 
-  bool is_rexruntime = strstr(info->dlpi_name, "librexruntime.so") != nullptr ||
-                       strstr(info->dlpi_name, "librexruntimerd.so") != nullptr;
+  bool is_target = strstr(info->dlpi_name, "librexruntime") != nullptr ||
+                   strstr(info->dlpi_name, "librexgpu-xenos") != nullptr;
 
-  if (is_rexruntime) {
+  if (is_target) {
     LibraryGotSlots slots{};
     ScanLibraryGot(info, slots);
 
@@ -454,9 +473,12 @@ static int DlIteratePatchCallback(struct dl_phdr_info* info, size_t, void*) {
     if (slots.got_pthread_detach) {
       PatchGotSlot(slots.got_pthread_detach, (void*)&HookedPthreadDetach, (void**)&g_real_pthread_detach);
     }
+    if (slots.got_pthread_setname_np) {
+      PatchGotSlot(slots.got_pthread_setname_np, (void*)&HookedPthreadSetNameNp, (void**)&g_real_pthread_setname_np);
+    }
     __android_log_print(ANDROID_LOG_INFO, "BionicPthreadFix",
-                        "Patched librexruntime pthread GOT slots (create=%p, join=%p, detach=%p)",
-                        slots.got_pthread_create, slots.got_pthread_join, slots.got_pthread_detach);
+                        "Patched %s pthread GOT slots (create=%p, join=%p, detach=%p, setname=%p)",
+                        info->dlpi_name, slots.got_pthread_create, slots.got_pthread_join, slots.got_pthread_detach, slots.got_pthread_setname_np);
   }
   return 0;
 }
@@ -466,6 +488,7 @@ static void InitBionicPthreadFix() {
   if (!g_real_pthread_create) g_real_pthread_create = (int(*)(pthread_t*, const pthread_attr_t*, void*(*)(void*), void*))dlsym(RTLD_DEFAULT, "pthread_create");
   if (!g_real_pthread_join) g_real_pthread_join = (int(*)(pthread_t, void**))dlsym(RTLD_DEFAULT, "pthread_join");
   if (!g_real_pthread_detach) g_real_pthread_detach = (int(*)(pthread_t))dlsym(RTLD_DEFAULT, "pthread_detach");
+  if (!g_real_pthread_setname_np) g_real_pthread_setname_np = (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
   dl_iterate_phdr(DlIteratePatchCallback, nullptr);
   __android_log_print(ANDROID_LOG_INFO, "BionicPthreadFix", "Bionic pthread hooks initialized successfully.");

@@ -1133,7 +1133,7 @@ public class TitleActivity extends Activity {
             toml.append("render_target_path_vulkan = ").append((char) 34).append(vulkanEdram).append((char) 34).append((char) 10);
             toml.append("vulkan_async_skip_incomplete_frames = ").append(asyncSkip ? "true" : "false").append((char) 10);
             toml.append("vulkan_submit_on_primary_buffer_end = false").append((char) 10);
-            toml.append("vulkan_dynamic_rendering = true").append((char) 10);
+            toml.append("vulkan_dynamic_rendering = false").append((char) 10);
             toml.append("gpu_backend = ").append((char) 34).append("vulkan").append((char) 34).append((char) 10);
             toml.append("gpu_plugin = ").append((char) 34).append(plugin).append((char) 34).append((char) 10);
             toml.append("gpu = ").append((char) 34).append(plugin).append((char) 34).append((char) 10).append((char) 10);
@@ -1153,8 +1153,13 @@ public class TitleActivity extends Activity {
             toml.append("async_shader_compilation = ").append(asyncShaders ? "true" : "false").append((char) 10);
             toml.append("vulkan_pipeline_creation_threads = ").append(pipelineThreads).append((char) 10);
             toml.append("texture_cache_memory_limit_soft = ").append(textureCacheLimit).append((char) 10);
+            toml.append("texture_cache_memory_limit_render_to_texture = 16").append((char) 10);
             toml.append("gpu_3d_to_2d_texture = ").append(gpu3dTo2d ? "true" : "false").append((char) 10);
             toml.append("readback_resolve = ").append((char) 34).append(readback ? "fast" : "none").append((char) 34).append((char) 10);
+            toml.append("vulkan_readback_resolve = ").append(readback ? "true" : "false").append((char) 10);
+            toml.append("vulkan_readback_memexport = false").append((char) 10);
+            toml.append("readback_memexport = false").append((char) 10);
+            toml.append("readback_memexport_fast = false").append((char) 10);
             toml.append("native_2x_msaa = ").append(nativeMsaa ? "true" : "false").append((char) 10);
             toml.append("gamma_render_target_as_unorm16 = false").append((char) 10).append((char) 10);
 
@@ -1172,9 +1177,20 @@ public class TitleActivity extends Activity {
             }
             toml.append("protect_zero = false").append((char) 10);
             toml.append("query_occlusion_fake_sample_count = 1").append((char) 10);
+            toml.append("occlusion_query_enable = false").append((char) 10);
             toml.append("primitive_processor_cache_min_indices = -1").append((char) 10);
             toml.append("clear_memory_page_state = false").append((char) 10);
             toml.append("depth_transfer_not_equal_test = false").append((char) 10);
+            toml.append("execute_unclipped_draw_vs_on_cpu = false").append((char) 10);
+            toml.append("execute_unclipped_draw_vs_on_cpu_for_psi_render_backend = false").append((char) 10);
+            toml.append("execute_unclipped_draw_vs_on_cpu_with_scissor = false").append((char) 10);
+            toml.append("force_convert_quad_lists_to_triangle_lists = true").append((char) 10);
+            toml.append("vulkan_force_convert_quad_lists_to_triangle_lists = true").append((char) 10);
+            toml.append("force_convert_triangle_fans_to_lists = true").append((char) 10);
+            toml.append("mrt_edram_used_range_clamp_to_min = true").append((char) 10);
+            toml.append("vulkan_allow_present_mode_mailbox = true").append((char) 10);
+            toml.append("vulkan_allow_present_mode_immediate = true").append((char) 10);
+            toml.append("vulkan_allow_present_mode_fifo_relaxed = true").append((char) 10);
 
             String tomlContent = toml.toString();
 

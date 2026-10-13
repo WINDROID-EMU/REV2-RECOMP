@@ -225,10 +225,18 @@ inline GpuFamily DetectGpuFamily(std::string& description) {
 /**
  * @brief Retrieves the native library directory of the running process.
  */
-static std::string GetNativeLibraryDir(void* adrenotools_handle) {
+static std::string GetNativeLibraryDir(void* symbol_ptr) {
 #if __ANDROID_API__ >= 21
     Dl_info info{};
-    if (dladdr(adrenotools_handle, &info) && info.dli_fname) {
+    if (symbol_ptr && dladdr(symbol_ptr, &info) && info.dli_fname) {
+        std::string so_path = info.dli_fname;
+        auto slash = so_path.rfind('/');
+        if (slash != std::string::npos) {
+            return so_path.substr(0, slash);
+        }
+    }
+    // Fallback: check this library itself (&GetNativeLibraryDir in libRERev2.so)
+    if (dladdr(reinterpret_cast<void*>(&GetNativeLibraryDir), &info) && info.dli_fname) {
         std::string so_path = info.dli_fname;
         auto slash = so_path.rfind('/');
         if (slash != std::string::npos) {
@@ -357,15 +365,23 @@ inline bool TryLoadCustomVulkanDriver(struct android_app* state) {
     }
 
     // ── 3. Resolve hookLibDir ─────────────────────────────────────────────────
-    std::string hook_lib_dir = GetNativeLibraryDir(adrenotools);
+    std::string hook_lib_dir = GetNativeLibraryDir(reinterpret_cast<void*>(open_libvulkan));
+    if (hook_lib_dir.empty()) {
+        hook_lib_dir = GetNativeLibraryDir(reinterpret_cast<void*>(&TryLoadCustomVulkanDriver));
+    }
     if (hook_lib_dir.empty()) {
         ATERR("Could not determine nativeLibraryDir — skipping Turnip load");
         dlclose(adrenotools);
         return false;
     }
 
+    std::string custom_driver_dir = target_turnip_dir.string();
+    if (!custom_driver_dir.empty() && custom_driver_dir.back() != '/') {
+        custom_driver_dir += '/';
+    }
+
     ATLOG("hookLibDir resolved: %s", hook_lib_dir.c_str());
-    ATLOG("customDriverDir:     %s", target_turnip_dir.c_str());
+    ATLOG("customDriverDir:     %s", custom_driver_dir.c_str());
     ATLOG("customDriverName:    %s", driver_filename.c_str());
 
     // ── 4. Call adrenotools_open_libvulkan ────────────────────────────────────
@@ -374,7 +390,7 @@ inline bool TryLoadCustomVulkanDriver(struct android_app* state) {
         ADRENOTOOLS_DRIVER_CUSTOM,          // featureFlags
         nullptr,                            // tmpLibDir (not needed on API ≥29)
         hook_lib_dir.c_str(),               // hookLibDir = nativeLibraryDir
-        target_turnip_dir.c_str(),          // customDriverDir
+        custom_driver_dir.c_str(),          // customDriverDir (requires trailing slash)
         driver_filename.c_str(),            // customDriverName
         nullptr                             // fileRedirectDir
     );
