@@ -345,22 +345,9 @@ void android_main(struct android_app* state) {
   char* dummy_argv[] = { const_cast<char*>("RERev2"), nullptr };
   rex::cvar::Init(1, dummy_argv);
 
-  // Optional user overrides (rerev2.toml in storage directory) loaded before defaults
-  if (!media_path.empty()) {
-    rex::cvar::LoadConfig(media_path / "rerev2.toml");
-  }
-  if (external_path && external_path[0]) {
-    rex::cvar::LoadConfig(std::filesystem::path(external_path) / "rerev2.toml");
-  }
-  if (internal_path && internal_path[0]) {
-    rex::cvar::LoadConfig(std::filesystem::path(internal_path) / "rerev2.toml");
-  }
-
-  // Set default baseline flags for Android mobile platform only if not already specified by config
+  // 1. Set baseline default flags for Android mobile platform
   auto SetDefaultFlag = [](std::string_view name, std::string_view val) {
-    if (rex::cvar::GetFlagSource(name) == rex::cvar::Source::kDefault) {
-      rex::cvar::SetFlagByName(name, val);
-    }
+    rex::cvar::SetFlagByName(name, val);
   };
 
   SetDefaultFlag("gpu_backend", "vulkan");
@@ -370,19 +357,21 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("readback_resolve", "none");
   SetDefaultFlag("vulkan_readback_resolve", "false");
   SetDefaultFlag("async_shader_compilation", "true");
-  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "false");
+  // CRITICAL: Prevent hard rendering freezes on pipeline creation by skipping incomplete frames
+  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "true");
   SetDefaultFlag("vulkan_submit_on_primary_buffer_end", "false");
   SetDefaultFlag("vulkan_dynamic_rendering", "false");
   SetDefaultFlag("native_2x_msaa", "false");
   SetDefaultFlag("gamma_render_target_as_unorm16", "false");
   SetDefaultFlag("depth_transfer_not_equal_test", "false");
   SetDefaultFlag("clear_memory_page_state", "false");
-  // Mobile devices memory cache configuration (384MB soft / 768MB hard prevents aggressive texture thrashing)
+  // Mobile texture cache configuration (512MB soft / 1024MB hard prevents thrashing)
   SetDefaultFlag("texture_cache_memory_limit_render_to_texture", "16");
-  SetDefaultFlag("texture_cache_memory_limit_soft", "384");
-  SetDefaultFlag("texture_cache_memory_limit_hard", "768");
+  SetDefaultFlag("texture_cache_memory_limit_soft", "512");
+  SetDefaultFlag("texture_cache_memory_limit_hard", "1024");
   SetDefaultFlag("texture_cache_memory_limit_soft_lifetime", "60");
-  SetDefaultFlag("vulkan_pipeline_creation_threads", "4");
+  // Use 2 creation threads to prevent starving MT Framework's 19 engine/audio threads
+  SetDefaultFlag("vulkan_pipeline_creation_threads", "2");
   SetDefaultFlag("vulkan_sparse_shared_memory", "true");
   SetDefaultFlag("store_shaders", "true");
   SetDefaultFlag("vsync", "false");
@@ -404,6 +393,7 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("vulkan_force_convert_quad_lists_to_triangle_lists", "true");
   SetDefaultFlag("force_convert_triangle_fans_to_lists", "true");
   SetDefaultFlag("mrt_edram_used_range_clamp_to_min", "true");
+  SetDefaultFlag("direct_host_resolve", "true");
 
   // Mobile viewport & texture fetch optimizations (aniso 0 = bilinear filtering for maximum bandwidth)
   SetDefaultFlag("video_mode_width", "1280");
@@ -422,6 +412,17 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("log_noisy", "false");
   SetDefaultFlag("log_verbose", "false");
   SetDefaultFlag("protect_zero", "false");
+
+  // 2. Load user overrides (rerev2.toml) so user settings strictly take precedence
+  if (!media_path.empty()) {
+    rex::cvar::LoadConfig(media_path / "rerev2.toml");
+  }
+  if (external_path && external_path[0]) {
+    rex::cvar::LoadConfig(std::filesystem::path(external_path) / "rerev2.toml");
+  }
+  if (internal_path && internal_path[0]) {
+    rex::cvar::LoadConfig(std::filesystem::path(internal_path) / "rerev2.toml");
+  }
 
   LOGI("Effective GPU plugin cvar: %s", rex::cvar::GetFlagByName("gpu_plugin").c_str());
 

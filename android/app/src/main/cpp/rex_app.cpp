@@ -1043,6 +1043,10 @@ bool ReXApp::SetupPresentation() {
   }
 
   if (config_.graphics) {
+    if (!config_path_.empty() && std::filesystem::exists(config_path_)) {
+      REXLOG_INFO("Android: Reapplying config '{}' to freshly initialized GPU plugin", config_path_.string());
+      rex::cvar::LoadConfig(config_path_);
+    }
     X_STATUS status = config_.graphics->SetupPresentation(&app_context());
     if (XFAILED(status)) {
       REXLOG_ERROR("Graphics presentation setup failed: {:08X}", status);

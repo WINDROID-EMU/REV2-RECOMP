@@ -921,14 +921,14 @@ public class TitleActivity extends Activity {
         String curEdram = prefs.getString(KEY_EDRAM_PATH, "rtv");
         spEdramPath.setSelection(findStringIndex(edramValues, curEdram, 0));
 
-        int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 4);
-        spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 2));
+        int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
+        spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 1));
 
-        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 384);
-        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 1));
+        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
+        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 2));
 
-        int curAniso = prefs.getInt(KEY_ANISOTROPIC, 1);
-        spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 1));
+        int curAniso = prefs.getInt(KEY_ANISOTROPIC, 0);
+        spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 0));
 
         String curAa = prefs.getString(KEY_ANTIALIASING, "none");
         spAntialiasing.setSelection(findStringIndex(aaValues, curAa, 0));
@@ -936,10 +936,10 @@ public class TitleActivity extends Activity {
         String curLog = prefs.getString(KEY_LOG_LEVEL, "info");
         spLogLevel.setSelection(findStringIndex(logValues, curLog, 2));
 
-        cbVsync.setChecked(prefs.getBoolean(KEY_VSYNC, true));
+        cbVsync.setChecked(prefs.getBoolean(KEY_VSYNC, false));
         cbStretchScreen.setChecked(prefs.getBoolean(KEY_STRETCH_SCREEN, true));
         cbAsyncShaders.setChecked(prefs.getBoolean(KEY_ASYNC_SHADERS, true));
-        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, false));
+        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, true));
         cbGpu3dTo2d.setChecked(prefs.getBoolean(KEY_GPU_3D_TO_2D, true));
         cbReadbackResolve.setChecked(prefs.getBoolean(KEY_READBACK_RESOLVE, false));
         cbNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
@@ -1011,7 +1011,7 @@ public class TitleActivity extends Activity {
                 cbVsync.setChecked(true);
                 cbStretchScreen.setChecked(true);
                 cbAsyncShaders.setChecked(true);
-                cbAsyncSkip.setChecked(false);
+                cbAsyncSkip.setChecked(true);
                 cbGpu3dTo2d.setChecked(true);
                 cbReadbackResolve.setChecked(false);
                 cbNativeMsaa.setChecked(false);
@@ -1025,6 +1025,12 @@ public class TitleActivity extends Activity {
                 etGamertag.setText("Player");
                 Toast.makeText(TitleActivity.this, "Optimized Android defaults restored.", Toast.LENGTH_SHORT).show();
             });
+        }
+
+        // Clean & Rebuild Shader Cache button
+        Button btnClearShaders = dialogView.findViewById(R.id.btn_clear_shader_cache);
+        if (btnClearShaders != null) {
+            btnClearShaders.setOnClickListener(v -> clearAndRebuildShaderCache());
         }
 
         // Save button
@@ -1097,16 +1103,16 @@ public class TitleActivity extends Activity {
             String res = prefs.getString(KEY_RESOLUTION, "720p");
             int scale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
             String plugin = prefs.getString(KEY_GPU_PLUGIN, "xenos");
-            boolean vsync = prefs.getBoolean(KEY_VSYNC, true);
+            boolean vsync = prefs.getBoolean(KEY_VSYNC, false);
             boolean stretchScreen = prefs.getBoolean(KEY_STRETCH_SCREEN, true);
             String edram = prefs.getString(KEY_EDRAM_PATH, "rtv");
             boolean asyncShaders = prefs.getBoolean(KEY_ASYNC_SHADERS, true);
-            boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, false);
-            int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 4);
-            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 384);
+            boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, true);
+            int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
+            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
             boolean gpu3dTo2d = prefs.getBoolean(KEY_GPU_3D_TO_2D, true);
             boolean readback = prefs.getBoolean(KEY_READBACK_RESOLVE, false);
-            int aniso = prefs.getInt(KEY_ANISOTROPIC, 1);
+            int aniso = prefs.getInt(KEY_ANISOTROPIC, 0);
             String aa = prefs.getString(KEY_ANTIALIASING, "none");
             boolean nativeMsaa = prefs.getBoolean(KEY_NATIVE_MSAA, false);
             boolean mute = prefs.getBoolean(KEY_AUDIO_MUTE, false);
@@ -1239,6 +1245,36 @@ public class TitleActivity extends Activity {
         }
     }
 
+    private void clearAndRebuildShaderCache() {
+        File[] targetDirs = new File[] {
+            getExternalFilesDir(null),
+            getFilesDir(),
+            new File(android.os.Environment.getExternalStorageDirectory(), "Android/data/" + getPackageName() + "/files")
+        };
+        int deletedCount = 0;
+        for (File baseDir : targetDirs) {
+            if (baseDir == null || !baseDir.exists()) continue;
+            File shaderDir = new File(baseDir, "cache/shaders/shareable");
+            if (shaderDir.exists()) {
+                File[] files = shaderDir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.delete()) {
+                            deletedCount++;
+                        }
+                    }
+                }
+            }
+            File rootVkCache = new File(baseDir, "cache/5841144C_hw.vkcache");
+            if (rootVkCache.exists()) rootVkCache.delete();
+
+            // Re-extract fresh bundled shaders specifically for RE Revelations 2
+            extractBundledShadersToDir(baseDir);
+        }
+        android.util.Log.i("RERev2-Title", "Purged " + deletedCount + " old shader cache files and rebuilt for RERev2");
+        Toast.makeText(this, "✔ Cache de shaders limpo e refeito para Resident Evil Revelations 2!", Toast.LENGTH_LONG).show();
+    }
+
     private void extractBundledShadersToDir(File baseDir) {
         if (baseDir == null) return;
         try {
@@ -1246,6 +1282,20 @@ public class TitleActivity extends Activity {
             if (!shaderDir.exists()) {
                 shaderDir.mkdirs();
             }
+
+            // 1. Purge any legacy NFSMW cache files (Title ID 454107D9)
+            File[] existingFiles = shaderDir.listFiles();
+            if (existingFiles != null) {
+                for (File f : existingFiles) {
+                    String name = f.getName();
+                    if (name.startsWith("454107D9")) {
+                        f.delete();
+                        android.util.Log.i("RERev2-Title", "Purged legacy NFSMW cache file: " + name);
+                    }
+                }
+            }
+
+            // 2. Extract verified shaders for Resident Evil Revelations 2 (Title ID 5841144C)
             String[] list = getAssets().list("shaders/shareable");
             String[] shaderFiles = (list != null && list.length > 0) ? list : new String[] {
                 "5841144C.xsh", "5841144C.fbo.vk.xpso", "5841144C_prebaked.spvcache", "5841144C_hw.vkcache"
@@ -1253,6 +1303,12 @@ public class TitleActivity extends Activity {
             for (String fileName : shaderFiles) {
                 File target = new File(shaderDir, fileName);
                 boolean needsExtract = !target.exists() || target.length() == 0;
+                if (fileName.endsWith(".xpso") && target.exists() && target.length() < 35 * 1024) {
+                    needsExtract = true;
+                }
+                if (fileName.endsWith(".xsh") && target.exists() && target.length() < 450 * 1024) {
+                    needsExtract = true;
+                }
                 if (fileName.contains("prebaked") && target.exists() && target.length() < 1024 * 1024) {
                     needsExtract = true;
                 }

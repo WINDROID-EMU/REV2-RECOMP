@@ -23,7 +23,7 @@ class PrebakedShaderCache {
  public:
   static constexpr uint32_t kMagic = 0x53584552;  // "REXS"
   static constexpr uint32_t kVersion = 1;
-  static constexpr uint32_t kDefaultTitleId = 0x454107D9;
+  static constexpr uint32_t kDefaultTitleId = 0x5841144C;
 
   static PrebakedShaderCache& Get();
 

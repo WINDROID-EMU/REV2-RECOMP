@@ -268,6 +268,26 @@
                 android:textSize="12sp"
                 android:layout_marginBottom="12dp" />
 
+            <!-- Clean & Rebuild Shader Cache -->
+            <Button
+                android:id="@+id/btn_clear_shader_cache"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="@drawable/rom_button_bg"
+                android:text="🗑 LIMPAR CACHE DE SHADERS (REFAZER)"
+                android:textColor="#FF5252"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="ℹ Apaga caches antigos/residuais do NFSMW ou runs anteriores e restaura os shaders limpos de Resident Evil Revelations 2 (5841144C)."
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
             <!-- Texture Cache -->
             <TextView
                 android:layout_width="wrap_content"
