@@ -1,12 +1,18 @@
 package com.capcom.rerev2;
 
 import android.app.NativeActivity;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.hardware.input.InputManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.InputDevice;
+import android.view.InputEvent;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.PopupWindow;
@@ -38,6 +44,8 @@ public class GameActivity extends NativeActivity {
 
     private VirtualControllerInputView controlsView;
     private PopupWindow controlsPopup;
+    private InputManager inputManager;
+    private InputManager.InputDeviceListener inputDeviceListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,8 +87,6 @@ public class GameActivity extends NativeActivity {
                 default: break;
             }
 
-// Logging disabled for 60fps input performance
-
             try {
                 nativeSetVirtualGamepad(xinputButtons, lx, -ly, rx, -ry, lt, rt);
             } catch (UnsatisfiedLinkError err) {
@@ -88,14 +94,16 @@ public class GameActivity extends NativeActivity {
             }
         });
 
-        // Watch layout changes to update popup size
+        // Watch layout changes to update popup size or visibility
         View decorView = getWindow().getDecorView();
         if (decorView != null) {
             decorView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
                 int w = right - left;
                 int h = bottom - top;
                 if (w > 0 && h > 0) {
-                    if (controlsPopup != null && controlsPopup.isShowing()) {
+                    if (isPhysicalGamepadConnected()) {
+                        hideControlsOverlay();
+                    } else if (controlsPopup != null && controlsPopup.isShowing()) {
                         controlsPopup.update(0, 0, w, h);
                     } else {
                         showControlsOverlay();
@@ -103,10 +111,135 @@ public class GameActivity extends NativeActivity {
                 }
             });
         }
+
+        // Register InputDeviceListener to detect physical controller connection/disconnection
+        inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
+        inputDeviceListener = new InputManager.InputDeviceListener() {
+            @Override
+            public void onInputDeviceAdded(int deviceId) {
+                Log.i(TAG, "Input device added: id=" + deviceId);
+                updateControlsVisibility();
+            }
+
+            @Override
+            public void onInputDeviceRemoved(int deviceId) {
+                Log.i(TAG, "Input device removed: id=" + deviceId);
+                updateControlsVisibility();
+            }
+
+            @Override
+            public void onInputDeviceChanged(int deviceId) {
+                Log.i(TAG, "Input device changed: id=" + deviceId);
+                updateControlsVisibility();
+            }
+        };
+
+        if (inputManager != null) {
+            inputManager.registerInputDeviceListener(inputDeviceListener, null);
+        }
     }
 
+    /**
+     * Checks if a specific InputDevice is a physical gamepad or joystick.
+     */
+    public static boolean isPhysicalGamepad(InputDevice device) {
+        if (device == null || device.isVirtual()) {
+            return false;
+        }
+
+        int sources = device.getSources();
+        boolean isGamepad = (sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD;
+        boolean isJoystick = (sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
+
+        if (isGamepad || isJoystick) {
+            return true;
+        }
+
+        // Additional fallback: check for typical gamepad buttons
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            try {
+                boolean[] hasKeys = device.hasKeys(new int[]{
+                        KeyEvent.KEYCODE_BUTTON_A,
+                        KeyEvent.KEYCODE_BUTTON_B,
+                        KeyEvent.KEYCODE_BUTTON_X,
+                        KeyEvent.KEYCODE_BUTTON_Y
+                });
+                for (boolean hasKey : hasKeys) {
+                    if (hasKey) {
+                        return true;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if at least one physical gamepad is currently connected to the device.
+     */
+    public boolean isPhysicalGamepadConnected() {
+        int[] deviceIds = InputDevice.getDeviceIds();
+        for (int deviceId : deviceIds) {
+            InputDevice device = InputDevice.getDevice(deviceId);
+            if (isPhysicalGamepad(device)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Updates visibility of the virtual controls overlay based on physical gamepad presence.
+     */
+    private void updateControlsVisibility() {
+        runOnUiThread(() -> {
+            boolean hasGamepad = isPhysicalGamepadConnected();
+            Log.i(TAG, "updateControlsVisibility: physical gamepad connected = " + hasGamepad);
+            if (hasGamepad) {
+                hideControlsOverlay();
+            } else {
+                showControlsOverlay();
+            }
+        });
+    }
+
+    /**
+     * Hides the virtual on-screen controls overlay and clears any pending virtual input states.
+     */
+    private void hideControlsOverlay() {
+        runOnUiThread(() -> {
+            if (controlsView != null) {
+                controlsView.setVisibility(View.GONE);
+            }
+
+            if (controlsPopup != null && controlsPopup.isShowing()) {
+                try {
+                    Log.i(TAG, "Dismissing virtual controls PopupWindow (physical controller active)");
+                    controlsPopup.dismiss();
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to dismiss controls PopupWindow", e);
+                }
+            }
+
+            // Reset virtual controller inputs so no keys remain stuck
+            try {
+                nativeSetVirtualGamepad(0, 0f, 0f, 0f, 0f, 0f, 0f);
+            } catch (UnsatisfiedLinkError | Exception ignored) {}
+        });
+    }
+
+    /**
+     * Shows the virtual on-screen controls overlay if no physical controller is connected.
+     */
     private void showControlsOverlay() {
         if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+
+        if (isPhysicalGamepadConnected()) {
+            hideControlsOverlay();
             return;
         }
 
@@ -122,6 +255,23 @@ public class GameActivity extends NativeActivity {
             return;
         }
 
+        if (controlsView != null) {
+            controlsView.setVisibility(View.VISIBLE);
+        }
+
+        if (controlsPopup != null && !controlsPopup.isShowing()) {
+            try {
+                Log.i(TAG, "Displaying Windroid-emu VirtualControllerInputView overlay (" + width + "x" + height + ")");
+                controlsPopup.setWidth(width);
+                controlsPopup.setHeight(height);
+                controlsPopup.showAtLocation(decorView, Gravity.TOP | Gravity.START, 0, 0);
+                return;
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to reshow existing controlsPopup, recreating", e);
+                controlsPopup = null;
+            }
+        }
+
         if (controlsPopup == null) {
             controlsPopup = new PopupWindow(controlsView, width, height, false);
             controlsPopup.setTouchable(true);
@@ -134,18 +284,43 @@ public class GameActivity extends NativeActivity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 controlsPopup.setIsClippedToScreen(false);
             }
-        }
-
-        if (!controlsPopup.isShowing()) {
             try {
                 Log.i(TAG, "Displaying Windroid-emu VirtualControllerInputView overlay (" + width + "x" + height + ")");
-                controlsPopup.setWidth(width);
-                controlsPopup.setHeight(height);
                 controlsPopup.showAtLocation(decorView, Gravity.TOP | Gravity.START, 0, 0);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to show controls PopupWindow", e);
             }
         }
+    }
+
+    private boolean isGamepadEvent(InputEvent event) {
+        InputDevice dev = event.getDevice();
+        if (isPhysicalGamepad(dev)) {
+            return true;
+        }
+        int sources = event.getSource();
+        return (sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
+                || (sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if (isGamepadEvent(event)) {
+            if (controlsPopup != null && controlsPopup.isShowing()) {
+                hideControlsOverlay();
+            }
+        }
+        return super.dispatchGenericMotionEvent(event);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (isGamepadEvent(event)) {
+            if (controlsPopup != null && controlsPopup.isShowing()) {
+                hideControlsOverlay();
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override
@@ -154,7 +329,7 @@ public class GameActivity extends NativeActivity {
         applyImmersiveMode();
         View decorView = getWindow().getDecorView();
         if (decorView != null) {
-            decorView.post(this::showControlsOverlay);
+            decorView.post(this::updateControlsVisibility);
         }
     }
 
@@ -165,13 +340,19 @@ public class GameActivity extends NativeActivity {
             applyImmersiveMode();
             View decorView = getWindow().getDecorView();
             if (decorView != null) {
-                decorView.post(this::showControlsOverlay);
+                decorView.post(this::updateControlsVisibility);
             }
         }
     }
 
     @Override
     protected void onDestroy() {
+        if (inputManager != null && inputDeviceListener != null) {
+            try {
+                inputManager.unregisterInputDeviceListener(inputDeviceListener);
+            } catch (Exception ignored) {}
+            inputDeviceListener = null;
+        }
         if (controlsPopup != null) {
             try {
                 controlsPopup.dismiss();
@@ -204,3 +385,4 @@ public class GameActivity extends NativeActivity {
         }
     }
 }
+
