@@ -72,6 +72,7 @@ public class TitleActivity extends Activity {
     private static final String KEY_GAMERTAG = "cfg_gamertag";
     private static final String KEY_LOG_LEVEL = "cfg_log_level";
     private static final String KEY_GAME_SPEED = "cfg_game_speed";
+    private static final String KEY_CULL_LIGHTS = "cfg_cull_lights";
 
     private static final int REQ_CODE_FOLDER          = 1001;
     private static final int REQ_CODE_ISO              = 1002;
@@ -856,6 +857,7 @@ public class TitleActivity extends Activity {
         CheckBox cbStretchScreen = dialogView.findViewById(R.id.cb_stretch_screen);
         CheckBox cbAsyncShaders = dialogView.findViewById(R.id.cb_async_shaders);
         CheckBox cbAsyncSkip = dialogView.findViewById(R.id.cb_async_skip);
+        CheckBox cbCullLights = dialogView.findViewById(R.id.cb_cull_lights);
         CheckBox cbGpu3dTo2d = dialogView.findViewById(R.id.cb_gpu_3d_to_2d);
         CheckBox cbReadbackResolve = dialogView.findViewById(R.id.cb_readback_resolve);
         CheckBox cbNativeMsaa = dialogView.findViewById(R.id.cb_native_msaa);
@@ -940,6 +942,9 @@ public class TitleActivity extends Activity {
         cbStretchScreen.setChecked(prefs.getBoolean(KEY_STRETCH_SCREEN, true));
         cbAsyncShaders.setChecked(prefs.getBoolean(KEY_ASYNC_SHADERS, true));
         cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, true));
+        if (cbCullLights != null) {
+            cbCullLights.setChecked(prefs.getBoolean(KEY_CULL_LIGHTS, true));
+        }
         cbGpu3dTo2d.setChecked(prefs.getBoolean(KEY_GPU_3D_TO_2D, true));
         cbReadbackResolve.setChecked(prefs.getBoolean(KEY_READBACK_RESOLVE, false));
         cbNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
@@ -1012,6 +1017,9 @@ public class TitleActivity extends Activity {
                 cbStretchScreen.setChecked(true);
                 cbAsyncShaders.setChecked(true);
                 cbAsyncSkip.setChecked(true);
+                if (cbCullLights != null) {
+                    cbCullLights.setChecked(true);
+                }
                 cbGpu3dTo2d.setChecked(true);
                 cbReadbackResolve.setChecked(false);
                 cbNativeMsaa.setChecked(false);
@@ -1051,6 +1059,7 @@ public class TitleActivity extends Activity {
                 boolean selStretchScreen = cbStretchScreen.isChecked();
                 boolean selAsyncShaders = cbAsyncShaders.isChecked();
                 boolean selAsyncSkip = cbAsyncSkip.isChecked();
+                boolean selCullLights = (cbCullLights != null) && cbCullLights.isChecked();
                 boolean selGpu3dTo2d = cbGpu3dTo2d.isChecked();
                 boolean selReadback = cbReadbackResolve.isChecked();
                 boolean selNativeMsaa = cbNativeMsaa.isChecked();
@@ -1076,6 +1085,7 @@ public class TitleActivity extends Activity {
                         .putBoolean(KEY_STRETCH_SCREEN, selStretchScreen)
                         .putBoolean(KEY_ASYNC_SHADERS, selAsyncShaders)
                         .putBoolean(KEY_ASYNC_SKIP, selAsyncSkip)
+                        .putBoolean(KEY_CULL_LIGHTS, selCullLights)
                         .putBoolean(KEY_GPU_3D_TO_2D, selGpu3dTo2d)
                         .putBoolean(KEY_READBACK_RESOLVE, selReadback)
                         .putBoolean(KEY_NATIVE_MSAA, selNativeMsaa)
@@ -1108,6 +1118,7 @@ public class TitleActivity extends Activity {
             String edram = prefs.getString(KEY_EDRAM_PATH, "rtv");
             boolean asyncShaders = prefs.getBoolean(KEY_ASYNC_SHADERS, true);
             boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, true);
+            boolean cullLights = prefs.getBoolean(KEY_CULL_LIGHTS, true);
             int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
             int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
             boolean gpu3dTo2d = prefs.getBoolean(KEY_GPU_3D_TO_2D, true);
@@ -1191,7 +1202,7 @@ public class TitleActivity extends Activity {
                 toml.append("log_verbose = false").append((char) 10);
             }
             toml.append("protect_zero = false").append((char) 10);
-            toml.append("query_occlusion_fake_sample_count = 1").append((char) 10);
+            toml.append("query_occlusion_fake_sample_count = ").append(cullLights ? "0" : "1").append((char) 10);
             toml.append("occlusion_query_enable = false").append((char) 10);
             toml.append("primitive_processor_cache_min_indices = -1").append((char) 10);
             toml.append("clear_memory_page_state = false").append((char) 10);
