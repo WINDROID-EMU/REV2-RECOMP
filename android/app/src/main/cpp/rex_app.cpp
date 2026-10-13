@@ -346,10 +346,14 @@ static int HookedPthreadJoin(pthread_t thread, void** retval) {
 }
 
 static int HookedPthreadSetNameNp(pthread_t thread, const char* name) {
-  if (!g_real_pthread_setname_np) {
-    g_real_pthread_setname_np = (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
+  if (!g_real_pthread_setname_np || (void*)g_real_pthread_setname_np == (void*)&HookedPthreadSetNameNp) {
+    void* libc = dlopen("libc.so", RTLD_NOW);
+    g_real_pthread_setname_np = libc ? (int(*)(pthread_t, const char*))dlsym(libc, "pthread_setname_np") : nullptr;
   }
-  int res = g_real_pthread_setname_np ? g_real_pthread_setname_np(thread, name) : 0;
+  int res = 0;
+  if (g_real_pthread_setname_np && (void*)g_real_pthread_setname_np != (void*)&HookedPthreadSetNameNp) {
+    res = g_real_pthread_setname_np(thread, name);
+  }
   if (name) {
     if (strstr(name, "XThread") != nullptr || strstr(name, "GPU") != nullptr || strstr(name, "Main") != nullptr) {
       ConfigurePerformanceThread();
@@ -362,6 +366,10 @@ static int HookedPthreadSetNameNp(pthread_t thread, const char* name) {
 
 static bool PatchGotSlot(void* target_addr, void* new_func, void** old_func) {
   if (!target_addr) return false;
+  if (*(void**)target_addr == new_func) {
+    return true; // Already patched
+  }
+
   uintptr_t page_size = sysconf(_SC_PAGESIZE);
   uintptr_t addr = (uintptr_t)target_addr;
   uintptr_t page_start = addr & ~(page_size - 1);
@@ -373,8 +381,11 @@ static bool PatchGotSlot(void* target_addr, void* new_func, void** old_func) {
     return false;
   }
 
-  if (old_func && !*old_func) {
-    *old_func = *(void**)target_addr;
+  if (old_func && (!*old_func || *old_func == new_func)) {
+    void* val = *(void**)target_addr;
+    if (val != new_func) {
+      *old_func = val;
+    }
   }
   *(void**)target_addr = new_func;
   return true;
@@ -487,6 +498,13 @@ static int DlIteratePatchCallback(struct dl_phdr_info* info, size_t, void*) {
 
 __attribute__((constructor(101)))
 static void InitBionicPthreadFix() {
+  void* libc = dlopen("libc.so", RTLD_NOW);
+  if (libc) {
+    g_real_pthread_create = (int(*)(pthread_t*, const pthread_attr_t*, void*(*)(void*), void*))dlsym(libc, "pthread_create");
+    g_real_pthread_join = (int(*)(pthread_t, void**))dlsym(libc, "pthread_join");
+    g_real_pthread_detach = (int(*)(pthread_t))dlsym(libc, "pthread_detach");
+    g_real_pthread_setname_np = (int(*)(pthread_t, const char*))dlsym(libc, "pthread_setname_np");
+  }
   if (!g_real_pthread_create) g_real_pthread_create = (int(*)(pthread_t*, const pthread_attr_t*, void*(*)(void*), void*))dlsym(RTLD_DEFAULT, "pthread_create");
   if (!g_real_pthread_join) g_real_pthread_join = (int(*)(pthread_t, void**))dlsym(RTLD_DEFAULT, "pthread_join");
   if (!g_real_pthread_detach) g_real_pthread_detach = (int(*)(pthread_t))dlsym(RTLD_DEFAULT, "pthread_detach");
@@ -523,10 +541,21 @@ static std::atomic<uint64_t> g_rerev2_swap_count{0};
 // Forward declaration from the generated code.
 REX_EXTERN(__imp__VdSwap);
 
+using VdSwapFn = void (*)(PPCContext, uint8_t*);
+static VdSwapFn g_real_VdSwap = nullptr;
+
 // Raw hook: runs on the GPU-emulation thread that calls VdSwap.
 REX_HOOK_RAW(__imp__VdSwap) {
-  // Call the real Xbox 360 VdSwap implementation first.
-  ::__imp__VdSwap(ctx, base);
+  if (!g_real_VdSwap) {
+    void* handle = dlopen("librexruntime.so", RTLD_NOW | RTLD_NOLOAD);
+    if (!handle) handle = dlopen("librexruntime.so", RTLD_NOW);
+    if (handle) {
+      g_real_VdSwap = (VdSwapFn)dlsym(handle, "__imp__VdSwap");
+    }
+  }
+  if (g_real_VdSwap && (void*)g_real_VdSwap != (void*)&::__imp__VdSwap) {
+    g_real_VdSwap(ctx, base);
+  }
   // Then record the present.
   g_rerev2_swap_count.fetch_add(1, std::memory_order_relaxed);
 }
@@ -1215,10 +1244,8 @@ void ReXApp::LaunchModule() {
 
     auto* graphics_system = runtime_->graphics_system();
     if (graphics_system && !runtime_->cache_root().empty()) {
-      uint32_t title_id = runtime_->kernel_state() ? runtime_->kernel_state()->title_id() : 0;
-      if (title_id == 0) {
-        title_id = 0x5841144C;  // Resident Evil: Revelations 2 Title ID fallback
-      }
+      // Resident Evil: Revelations 2 Title ID (guarantees 5841144C.xsh microcode & prebaked shaders are loaded)
+      uint32_t title_id = 0x5841144C;
       REXLOG_INFO("Initializing shader storage for title {:08X} (cache_root: {})...",
                   title_id, runtime_->cache_root().string());
       __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid",

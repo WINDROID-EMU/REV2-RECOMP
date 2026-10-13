@@ -408,6 +408,16 @@ public class TitleActivity extends Activity {
         }
         String saved = prefs.getString(KEY_ROM_PATH, null);
 
+        // If an extracted game folder exists at /storage/emulated/0/RERev2 with retail default.xex,
+        // prefer it over raw disc ISO (since the episodic ISO root only contains a 2.6MB launcher stub).
+        File extractedDefault = new File("/storage/emulated/0/RERev2");
+        if (extractedDefault.exists() && (new File(extractedDefault, "default.xex").exists() || new File(extractedDefault, "nativeXenon").exists())) {
+            if (saved == null || saved.toLowerCase().endsWith(".iso")) {
+                applyVerifiedGamePath(extractedDefault.getAbsolutePath(), true);
+                return;
+            }
+        }
+
         // 1. Testa o caminho previamente salvo pelo usuário
         if (saved != null) {
             File savedFile = new File(saved);
@@ -1268,6 +1278,35 @@ public class TitleActivity extends Activity {
             }
         } catch (Exception e) {
             android.util.Log.w("RERev2-Title", "Error extracting shader assets to " + baseDir, e);
+        }
+
+        // Also extract bundled retail default.xex if available in APK assets
+        extractBundledGameFiles(baseDir);
+    }
+
+    private void extractBundledGameFiles(File baseDir) {
+        if (baseDir == null) return;
+        try {
+            File gameDir = new File(baseDir, "game");
+            if (!gameDir.exists()) {
+                gameDir.mkdirs();
+            }
+            File targetXex = new File(gameDir, "default.xex");
+            // Retail executable is 28,451,328 bytes (~28MB)
+            if (!targetXex.exists() || targetXex.length() < 20 * 1024 * 1024) {
+                try (java.io.InputStream in = getAssets().open("game/default.xex");
+                     java.io.FileOutputStream out = new java.io.FileOutputStream(targetXex)) {
+                    byte[] buf = new byte[65536];
+                    int read;
+                    while ((read = in.read(buf)) != -1) {
+                        out.write(buf, 0, read);
+                    }
+                    android.util.Log.i("RERev2-Title", "Extracted retail default.xex to " + targetXex.getAbsolutePath() + " (" + targetXex.length() + " bytes)");
+                } catch (Exception ignored) {
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("RERev2-Title", "Error extracting bundled game files to " + baseDir, e);
         }
     }
 
