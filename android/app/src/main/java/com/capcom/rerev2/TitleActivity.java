@@ -400,12 +400,6 @@ public class TitleActivity extends Activity {
      */
     private void checkAndLoadGamePath() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        if (!prefs.contains(KEY_ROM_PATH)) {
-            SharedPreferences oldPrefs = getSharedPreferences("NFSMW_PREFS", Context.MODE_PRIVATE);
-            if (oldPrefs.contains(KEY_ROM_PATH)) {
-                prefs.edit().putString(KEY_ROM_PATH, oldPrefs.getString(KEY_ROM_PATH, null)).apply();
-            }
-        }
         String saved = prefs.getString(KEY_ROM_PATH, null);
 
         // If an extracted game folder exists at /storage/emulated/0/RERev2 with retail default.xex,
@@ -449,7 +443,7 @@ public class TitleActivity extends Activity {
 
         // Caso ainda não tenha sido configurado
         tvRomStatus.setText(R.string.status_no_rom);
-        tvRomStatus.setTextColor(getResources().getColor(R.color.nfsmw_orange));
+        tvRomStatus.setTextColor(getResources().getColor(R.color.rerev2_orange));
         btnSelectRom.setText(R.string.btn_select_rom);
     }
 
@@ -471,7 +465,7 @@ public class TitleActivity extends Activity {
         }
 
         tvRomStatus.setText(String.format(getString(R.string.status_rom_verified), displayName));
-        tvRomStatus.setTextColor(getResources().getColor(R.color.nfsmw_green));
+        tvRomStatus.setTextColor(getResources().getColor(R.color.rerev2_green));
         btnSelectRom.setText(R.string.btn_change_rom);
     }
 
@@ -560,7 +554,7 @@ public class TitleActivity extends Activity {
                         Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
-                android.util.Log.e("NFS-Turnip", "Failed to open ZIP URI", e);
+                android.util.Log.e("RERev2-Turnip", "Failed to open ZIP URI", e);
                 Toast.makeText(this,
                     "Error opening ZIP: " + e.getMessage(),
                     Toast.LENGTH_LONG).show();
@@ -777,7 +771,7 @@ public class TitleActivity extends Activity {
                 String name = entry.getName();
                 // Accept any .so inside the ZIP, rename it to our target name
                 if (!entry.isDirectory() && name.endsWith(".so")) {
-                    android.util.Log.i("NFS-Turnip",
+                    android.util.Log.i("RERev2-Turnip",
                         "Extracting '" + name + "' -> " + dest.getAbsolutePath());
                     try (FileOutputStream fos = new FileOutputStream(dest)) {
                         byte[] buf = new byte[65536];
@@ -796,7 +790,7 @@ public class TitleActivity extends Activity {
                 zis.closeEntry();
             }
         } catch (Exception e) {
-            android.util.Log.e("NFS-Turnip", "ZIP extraction failed", e);
+            android.util.Log.e("RERev2-Turnip", "ZIP extraction failed", e);
             Toast.makeText(this,
                 "Error extracting ZIP: " + e.getMessage(),
                 Toast.LENGTH_LONG).show();

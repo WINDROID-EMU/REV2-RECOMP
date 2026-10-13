@@ -754,7 +754,7 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
         std::filesystem::is_regular_file(paths.game_data_root)) {
       host_iso = paths.game_data_root;
       is_iso = true;
-      __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Detected ISO from game_data_root: %s", path_str.c_str());
+      __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Detected ISO from game_data_root: %s", path_str.c_str());
     }
   }
 
@@ -762,14 +762,14 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
     if (paths.game_data_root.empty()) {
       auto msg = std::string("--game_data_root was not provided.");
       REXLOG_ERROR("{}", msg);
-      __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "%s", msg.c_str());
+      __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "%s", msg.c_str());
       // rex::ShowSimpleMessageBox(rex::SimpleMessageBoxType::Error, msg);
       return false;
     }
     if (!std::filesystem::is_directory(paths.game_data_root)) {
       auto msg = fmt::format("--game_data_root does not exist: {}", paths.game_data_root.string());
       REXLOG_ERROR("{}", msg);
-      __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "%s", msg.c_str());
+      __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "%s", msg.c_str());
       // rex::ShowSimpleMessageBox(rex::SimpleMessageBoxType::Error, msg);
       return false;
     }
@@ -801,14 +801,14 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
   auto status = runtime_->Setup(ppc_info_, std::move(config_));
   if (XFAILED(status)) {
     REXLOG_ERROR("Runtime setup failed: {:08X}", status);
-    __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "Runtime setup failed: %08X", status);
+    __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "Runtime setup failed: %08X", status);
     return false;
   }
 
   std::string xex_image = "game:\\default.xex";
 
   if (is_iso) {
-    __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Mounting Xbox 360 ISO via DiscImageDevice: %s", host_iso.c_str());
+    __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Mounting Xbox 360 ISO via DiscImageDevice: %s", host_iso.c_str());
     auto* vfs = runtime_->file_system();
     if (vfs) {
       // 1. Unregister the dummy HostPathDevice that SetupVfs created for game_data_root
@@ -817,11 +817,11 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
       // 2. Initialize DiscImageDevice at \Device\Cdrom0 (standard Xbox 360 optical drive)
       auto disc_device = std::make_unique<rex::filesystem::DiscImageDevice>("\\Device\\Cdrom0", host_iso);
       if (!disc_device->Initialize()) {
-        __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "Failed to initialize DiscImageDevice for ISO: %s", host_iso.c_str());
+        __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "Failed to initialize DiscImageDevice for ISO: %s", host_iso.c_str());
         return false;
       }
 
-      __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "DiscImageDevice initialized! File count: %llu, total size: %llu",
+      __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "DiscImageDevice initialized! File count: %llu, total size: %llu",
                           static_cast<unsigned long long>(disc_device->file_count()),
                           static_cast<unsigned long long>(disc_device->total_file_size()));
 
@@ -830,7 +830,7 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
       if (disc_device->root()) {
         for (const auto& child : disc_device->root()->children()) {
           bool is_dir = (child->attributes() & 0x10) != 0;
-          __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "  ISO root entry: '%s' (size: %zu, is_dir: %d)",
+          __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "  ISO root entry: '%s' (size: %zu, is_dir: %d)",
                               child->name().c_str(), child->size(), is_dir ? 1 : 0);
           if (!is_dir && strcasecmp(child->name().c_str(), "default.xex") == 0) {
             found_xex = child->name();
@@ -843,7 +843,7 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
               for (const auto& subchild : child->children()) {
                 if (strcasecmp(subchild->name().c_str(), "default.xex") == 0) {
                   found_xex = child->name() + "\\" + subchild->name();
-                  __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "  Found XEX in subdirectory: %s", found_xex.c_str());
+                  __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "  Found XEX in subdirectory: %s", found_xex.c_str());
                   break;
                 }
               }
@@ -855,7 +855,7 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
 
       if (!found_xex.empty()) {
         xex_image = "game:\\" + found_xex;
-        __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Using entrypoint XEX from ISO: %s", xex_image.c_str());
+        __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Using entrypoint XEX from ISO: %s", xex_image.c_str());
       }
 
       // 3. Register the DiscImageDevice
@@ -868,7 +868,7 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
       vfs->RegisterSymbolicLink("d:", "\\Device\\Cdrom0");
       vfs->RegisterSymbolicLink("\\Device\\Harddisk0\\Partition1", "\\Device\\Cdrom0");
 
-      __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Xbox 360 ISO successfully mounted on \\Device\\Cdrom0 (symlinks game:, d:, and Partition1 active)");
+      __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Xbox 360 ISO successfully mounted on \\Device\\Cdrom0 (symlinks game:, d:, and Partition1 active)");
     }
   }
 
@@ -909,7 +909,7 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
     if (!std::filesystem::is_regular_file(xex_host)) {
       auto msg = fmt::format("Entrypoint XEX not found: {}", xex_host.string());
       REXLOG_ERROR("{}", msg);
-      __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "%s", msg.c_str());
+      __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "%s", msg.c_str());
       // rex::ShowSimpleMessageBox(rex::SimpleMessageBoxType::Error, msg);
       return false;
     }
@@ -919,29 +919,29 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
     if (!entry) {
       auto msg = fmt::format("Entrypoint XEX not found inside mounted ISO: {}", xex_image);
       REXLOG_ERROR("{}", msg);
-      __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "%s", msg.c_str());
+      __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "%s", msg.c_str());
       // rex::ShowSimpleMessageBox(rex::SimpleMessageBoxType::Error, msg);
       return false;
     }
-    __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Found entrypoint XEX inside mounted ISO: %s (size: %zu bytes)", xex_image.c_str(), entry->size());
+    __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Found entrypoint XEX inside mounted ISO: %s (size: %zu bytes)", xex_image.c_str(), entry->size());
   }
 
   status = runtime_->LoadXexImage(xex_image);
   if (XFAILED(status)) {
     auto msg = fmt::format("Failed to load XEX ({}): {:08X}", xex_image, status);
     REXLOG_ERROR("{}", msg);
-    __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "%s", msg.c_str());
+    __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "%s", msg.c_str());
     // rex::ShowSimpleMessageBox(rex::SimpleMessageBoxType::Error, msg);
     return false;
   }
-  __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Successfully loaded XEX image: %s", xex_image.c_str());
+  __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Successfully loaded XEX image: %s", xex_image.c_str());
 
   OnPostLoadXexImage();
 
   if (ppc_info_.rexcrt_heap) {
     if (!rex::kernel::crt::InitHeap(REXCVAR_GET(rexcrt_heap_size_mb), runtime_->memory())) {
       REXLOG_ERROR("Failed to initialize rexcrt heap");
-      __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "Failed to initialize rexcrt heap");
+      __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "Failed to initialize rexcrt heap");
       return false;
     }
   }
@@ -1232,15 +1232,15 @@ void ReXApp::LaunchModule() {
     });
 
 
-    __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Preparing module launch...");
+    __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Preparing module launch...");
     auto main_thread = runtime_->PrepareModuleLaunch();
     if (!main_thread) {
       REXLOG_ERROR("Failed to launch module");
-      __android_log_print(ANDROID_LOG_ERROR, "NFS-MainAndroid", "PrepareModuleLaunch returned NULL! Failed to launch module.");
+      __android_log_print(ANDROID_LOG_ERROR, "RERev2-MainAndroid", "PrepareModuleLaunch returned NULL! Failed to launch module.");
       app_context().QuitFromUIThread();
       return;
     }
-    __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Module prepared successfully.");
+    __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid", "Module prepared successfully.");
 
     auto* graphics_system = runtime_->graphics_system();
     if (graphics_system && !runtime_->cache_root().empty()) {
@@ -1248,7 +1248,7 @@ void ReXApp::LaunchModule() {
       uint32_t title_id = 0x5841144C;
       REXLOG_INFO("Initializing shader storage for title {:08X} (cache_root: {})...",
                   title_id, runtime_->cache_root().string());
-      __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid",
+      __android_log_print(ANDROID_LOG_INFO, "RERev2-MainAndroid",
                           "Initializing shader storage for title %08X at %s",
                           title_id, runtime_->cache_root().c_str());
       graphics_system->InitializeShaderStorage(runtime_->cache_root(), title_id, true);

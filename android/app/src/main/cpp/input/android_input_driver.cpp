@@ -10,7 +10,7 @@
 // Declared extern here; defined there. Zero-initialised at start-up.
 extern std::atomic<float> g_rerev2_engine_fps;
 
-#define TAG "NFS-AndroidInput"
+#define TAG "RERev2-AndroidInput"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 namespace rex::input::android {

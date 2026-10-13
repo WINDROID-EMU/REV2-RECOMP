@@ -3,7 +3,7 @@ plugins {
 }
 
 // ── Sincronização das .so do ReXGlue SDK ──────────────────────────────────────
-// O CMake linka libnfsmw.so contra rexglue-sdk/lib/*.so, mas o AGP empacota
+// O CMake linka libRERev2.so contra rexglue-sdk/lib/*.so, mas o AGP empacota
 // as .so que estão em jniLibs/arm64-v8a/. Se o SDK for atualizado e a pasta
 // jniLibs não for sincronizada, o APK carrega versões incompatíveis em runtime.
 //

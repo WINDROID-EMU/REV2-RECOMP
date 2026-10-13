@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="⚙ REREV2 — RUNTIME &amp; GPU SETTINGS"
-            android:textColor="@color/nfsmw_amber"
+            android:textColor="@color/rerev2_amber"
             android:textSize="17sp"
             android:textStyle="bold"
             android:letterSpacing="0.04" />
@@ -30,7 +30,7 @@
             android:layout_height="36dp"
             android:background="@drawable/rom_button_bg"
             android:text="✕"
-            android:textColor="@color/nfsmw_amber"
+            android:textColor="@color/rerev2_amber"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -61,7 +61,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="📺 VIDEO &amp; PERFORMANCE"
-                android:textColor="@color/nfsmw_amber_light"
+                android:textColor="@color/rerev2_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"
@@ -111,7 +111,7 @@
                 android:text="Vertical Sync (V-Sync)"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="4dp" />
 
             <!-- Stretch Screen -->
@@ -124,7 +124,7 @@
                 android:text="Stretch Screen (Fill Entire Display)"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="2dp" />
 
             <TextView
@@ -143,7 +143,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="⚡ GRAPHICS ENGINE &amp; VULKAN (Xenos / ReXGlue)"
-                android:textColor="@color/nfsmw_amber_light"
+                android:textColor="@color/rerev2_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"
@@ -209,7 +209,7 @@
                 android:text="Asynchronous Shader Compilation"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="2dp" />
 
             <TextView
@@ -231,7 +231,7 @@
                 android:text="Skip Frames with Incomplete Shaders"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="2dp" />
 
             <TextView
@@ -303,7 +303,7 @@
                 android:text="Optimize 3D Textures to 2D (gpu_3d_to_2d)"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="2dp" />
 
             <TextView
@@ -325,7 +325,7 @@
                 android:text="Post-Processing Effects / Bloom (readback_resolve)"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="2dp" />
 
             <TextView
@@ -381,7 +381,7 @@
                 android:text="Native MSAA 2x (Geometry Anti-Aliasing)"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="2dp" />
 
             <TextView
@@ -400,7 +400,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🔊 AUDIO &amp; CONTROLS"
-                android:textColor="@color/nfsmw_amber_light"
+                android:textColor="@color/rerev2_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"
@@ -415,7 +415,7 @@
                 android:text="Mute All Game Audio"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="6dp" />
 
             <CheckBox
@@ -427,7 +427,7 @@
                 android:text="Enable Physical Keyboard &amp; Mouse Input"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="12dp" />
 
             <!-- ========================================================= -->
@@ -437,7 +437,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="☣️ GAME &amp; SYSTEM"
-                android:textColor="@color/nfsmw_amber_light"
+                android:textColor="@color/rerev2_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"
@@ -452,7 +452,7 @@
                 android:text="Direct Host Resolve (Fast GPU Memory Copy)"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="6dp" />
 
             <CheckBox
@@ -464,7 +464,7 @@
                 android:text="Xbox Live Gold Account Privileges"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
-                android:buttonTint="@color/nfsmw_amber"
+                android:buttonTint="@color/rerev2_amber"
                 android:layout_marginBottom="8dp" />
 
             <TextView
@@ -536,7 +536,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🎮 VULKAN DRIVER (TURNIP / MESA)"
-                android:textColor="@color/nfsmw_amber_light"
+                android:textColor="@color/rerev2_amber_light"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"
@@ -573,7 +573,7 @@
                     android:layout_marginEnd="6dp"
                     android:background="@drawable/rom_button_bg"
                     android:text="📦 INSTALL (ZIP)"
-                    android:textColor="@color/nfsmw_amber"
+                    android:textColor="@color/rerev2_amber"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
@@ -616,7 +616,7 @@
             android:layout_marginEnd="6dp"
             android:background="@drawable/rom_button_bg"
             android:text="🔄 ANDROID DEFAULTS"
-            android:textColor="@color/nfsmw_amber"
+            android:textColor="@color/rerev2_amber"
             android:textSize="13sp"
             android:textStyle="bold" />
 
@@ -628,7 +628,7 @@
             android:layout_marginStart="6dp"
             android:background="@drawable/rom_button_bg"
             android:text="💾 SAVE &amp; APPLY"
-            android:textColor="@color/nfsmw_amber"
+            android:textColor="@color/rerev2_amber"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>

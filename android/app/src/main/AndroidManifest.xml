@@ -15,7 +15,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:hasCode="true"
-        android:theme="@style/Theme.NFSMW.Title"
+        android:theme="@style/Theme.RERev2.Title"
         android:requestLegacyExternalStorage="true"
         android:extractNativeLibs="true"
         android:largeHeap="true">
@@ -24,7 +24,7 @@
         <activity
             android:name="com.capcom.rerev2.TitleActivity"
             android:label="Resident Evil: Revelations 2"
-            android:theme="@style/Theme.NFSMW.Title"
+            android:theme="@style/Theme.RERev2.Title"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|uiMode"
             android:exported="true">

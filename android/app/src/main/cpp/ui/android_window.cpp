@@ -3,7 +3,7 @@
 #include <android/log.h>
 #include <rex/platform/android/android_bridge.h>
 
-#define TAG "NFS-AndroidWindow"
+#define TAG "RERev2-AndroidWindow"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 

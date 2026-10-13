@@ -26,7 +26,7 @@ import com.windroid.emu.views.VirtualControllerInputView;
 
 public class GameActivity extends NativeActivity {
 
-    private static final String TAG = "NFS-GameActivity";
+    private static final String TAG = "RERev2-GameActivity";
 
     // Native XInput bitmask constants
     public static final int BTN_DPAD_UP        = 0x0001;

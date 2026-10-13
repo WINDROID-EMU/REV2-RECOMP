@@ -15,7 +15,7 @@ import android.view.View;
 import java.util.ArrayList;
 
 /**
- * Virtual Controller from Windroid-emu adapted for NFSMW Recompiled.
+ * Virtual Controller from Windroid-emu adapted for Resident Evil: Revelations 2 Recompiled.
  * Matches Windroid-emu layout, aesthetics, touch physics and button behaviors.
  */
 public class VirtualControllerInputView extends View {

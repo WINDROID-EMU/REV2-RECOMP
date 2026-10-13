@@ -1,7 +1,7 @@
 #include "android_app_context.h"
 #include <android/log.h>
 
-#define TAG "NFS-AndroidContext"
+#define TAG "RERev2-AndroidContext"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 

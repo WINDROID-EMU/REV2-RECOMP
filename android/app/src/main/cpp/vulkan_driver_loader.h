@@ -30,7 +30,7 @@
  *   system driver is used normally. No crash, no error — just a log line.
  *
  * @copyright   BSD-2-Clause (libadrenotools itself is BSD-2-Clause, Billy Laws)
- *              Project-specific glue: same licence as the rest of NFSMW-RECOMP.
+ *              Project-specific glue: same licence as the rest of REREV2-RECOMP.
  */
 
 #pragma once
@@ -51,7 +51,7 @@
 #include <vector>
 #include <algorithm>
 
-#define ATAG "NFS-VkLoader"
+#define ATAG "RERev2-VkLoader"
 #define ATLOG(...) __android_log_print(ANDROID_LOG_INFO,  ATAG, __VA_ARGS__)
 #define ATERR(...) __android_log_print(ANDROID_LOG_ERROR, ATAG, __VA_ARGS__)
 #define ATWRN(...) __android_log_print(ANDROID_LOG_WARN,  ATAG, __VA_ARGS__)
@@ -80,7 +80,7 @@ using PFN_adrenotools_open_libvulkan = void* (*)(
     const char* fileRedirectDir);
 }  // extern "C"
 
-namespace nfsmw::android {
+namespace rerev2::android {
 
 // Subdirectory inside internalDataPath where the Turnip SO is placed and executed.
 static constexpr const char* kTurnipSubdir      = "turnip";
@@ -417,7 +417,7 @@ inline bool TryLoadCustomVulkanDriver(struct android_app* state) {
     return true;
 }
 
-}  // namespace nfsmw::android
+}  // namespace rerev2::android
 
 #undef ATAG
 #undef ATLOG

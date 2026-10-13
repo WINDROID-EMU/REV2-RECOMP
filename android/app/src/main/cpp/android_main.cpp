@@ -26,7 +26,7 @@
 #include "vulkan_driver_loader.h"
 #include <rex/platform/android/android_bridge.h>
 
-#define TAG "NFS-MainAndroid"
+#define TAG "RERev2-MainAndroid"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
@@ -224,7 +224,7 @@ static void CrashSignalHandler(int signal, siginfo_t* info, void* contextPtr) {
     fsync(fd);
   }
 
-  __android_log_print(ANDROID_LOG_FATAL, "NFS-Crash",
+  __android_log_print(ANDROID_LOG_FATAL, "RERev2-Crash",
                       "FATAL SIGNAL %d (code=%d, addr=%p)",
                       signal, info ? info->si_code : 0, info ? info->si_addr : nullptr);
 
@@ -298,7 +298,7 @@ static void LogDeviceInfo() {
 }  // namespace
 
 void android_main(struct android_app* state) {
-  LOGI("=== Need for Speed: Most Wanted (Pure Android NDK) Starting ===");
+  LOGI("=== Resident Evil: Revelations 2 (Pure Android NDK) Starting ===");
 
   const char* internal_path = (state && state->activity && state->activity->internalDataPath) ? state->activity->internalDataPath : "";
   const char* external_path = (state && state->activity && state->activity->externalDataPath) ? state->activity->externalDataPath : "";
@@ -316,7 +316,7 @@ void android_main(struct android_app* state) {
 
   // 4. Turnip / Mesa custom Vulkan driver & HyperOS 3 UBWC fix
   {
-    bool turnip_loaded = nfsmw::android::TryLoadCustomVulkanDriver(state);
+    bool turnip_loaded = rerev2::android::TryLoadCustomVulkanDriver(state);
     if (turnip_loaded) {
       LOGI("[Vulkan] Turnip/Mesa driver active — shaderInt64 + BDA guaranteed");
     } else {
@@ -477,5 +477,5 @@ void android_main(struct android_app* state) {
   rex::thread::AndroidShutdown();
   rex::memory::AndroidShutdown();
 
-  LOGI("=== NFSMW Cleanly Terminated ===");
+  LOGI("=== RERev2 Cleanly Terminated ===");
 }

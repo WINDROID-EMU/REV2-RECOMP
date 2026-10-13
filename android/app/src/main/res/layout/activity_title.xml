@@ -3,7 +3,7 @@
     android:id="@+id/title_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/nfsmw_black"
+    android:background="@color/rerev2_black"
     android:keepScreenOn="true">
 
     <!-- Layer 1: Placeholder Background (prevent black flash while video loads) -->
@@ -57,7 +57,7 @@
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:text="⚙ SETTINGS"
-                android:textColor="@color/nfsmw_amber"
+                android:textColor="@color/rerev2_amber"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -81,7 +81,7 @@
                     android:elevation="4dp"
                     android:letterSpacing="0.05"
                     android:text="@string/btn_select_rom"
-                    android:textColor="@color/nfsmw_amber"
+                    android:textColor="@color/rerev2_amber"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
@@ -93,7 +93,7 @@
                     android:background="@drawable/rom_status_bg"
                     android:letterSpacing="0.03"
                     android:text="@string/status_no_rom"
-                    android:textColor="@color/nfsmw_orange"
+                    android:textColor="@color/rerev2_orange"
                     android:textSize="10sp" />
             </LinearLayout>
         </LinearLayout>
@@ -120,7 +120,7 @@
                 android:shadowRadius="4"
                 android:text="@string/title_press_start"
                 android:textAppearance="@android:style/TextAppearance.Material.Display1"
-                android:textColor="@color/nfsmw_amber"
+                android:textColor="@color/rerev2_amber"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -150,7 +150,7 @@
         android:id="@+id/fade_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/nfsmw_black"
+        android:background="@color/rerev2_black"
         android:alpha="0"
         android:visibility="gone" />
 

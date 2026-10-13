@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <fstream>
 
-#define TAG "NFS-AndroidStorage"
+#define TAG "RERev2-AndroidStorage"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)
 
