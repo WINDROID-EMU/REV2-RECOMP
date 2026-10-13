@@ -917,11 +917,11 @@ public class TitleActivity extends Activity {
         String curEdram = prefs.getString(KEY_EDRAM_PATH, "rtv");
         spEdramPath.setSelection(findStringIndex(edramValues, curEdram, 0));
 
-        int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
-        spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 1));
+        int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 4);
+        spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 2));
 
-        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 256);
-        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 0));
+        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 384);
+        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 1));
 
         int curAniso = prefs.getInt(KEY_ANISOTROPIC, 1);
         spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 1));
@@ -1098,8 +1098,8 @@ public class TitleActivity extends Activity {
             String edram = prefs.getString(KEY_EDRAM_PATH, "rtv");
             boolean asyncShaders = prefs.getBoolean(KEY_ASYNC_SHADERS, true);
             boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, false);
-            int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
-            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 256);
+            int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 4);
+            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 384);
             boolean gpu3dTo2d = prefs.getBoolean(KEY_GPU_3D_TO_2D, true);
             boolean readback = prefs.getBoolean(KEY_READBACK_RESOLVE, false);
             int aniso = prefs.getInt(KEY_ANISOTROPIC, 1);
@@ -1153,8 +1153,13 @@ public class TitleActivity extends Activity {
             toml.append("async_shader_compilation = ").append(asyncShaders ? "true" : "false").append((char) 10);
             toml.append("vulkan_pipeline_creation_threads = ").append(pipelineThreads).append((char) 10);
             toml.append("texture_cache_memory_limit_soft = ").append(textureCacheLimit).append((char) 10);
+            toml.append("texture_cache_memory_limit_hard = ").append(textureCacheLimit * 2).append((char) 10);
+            toml.append("texture_cache_memory_limit_soft_lifetime = 60").append((char) 10);
             toml.append("texture_cache_memory_limit_render_to_texture = 16").append((char) 10);
+            toml.append("vulkan_sparse_shared_memory = true").append((char) 10);
+            toml.append("store_shaders = true").append((char) 10);
             toml.append("gpu_3d_to_2d_texture = ").append(gpu3dTo2d ? "true" : "false").append((char) 10);
+
             toml.append("readback_resolve = ").append((char) 34).append(readback ? "fast" : "none").append((char) 34).append((char) 10);
             toml.append("vulkan_readback_resolve = ").append(readback ? "true" : "false").append((char) 10);
             toml.append("vulkan_readback_memexport = false").append((char) 10);
@@ -1221,9 +1226,19 @@ public class TitleActivity extends Activity {
     }
 
     private void extractBundledShaders(File extDir) {
-        if (extDir == null) return;
+        if (extDir != null) {
+            extractBundledShadersToDir(extDir);
+        }
+        File intDir = getFilesDir();
+        if (intDir != null && !intDir.equals(extDir)) {
+            extractBundledShadersToDir(intDir);
+        }
+    }
+
+    private void extractBundledShadersToDir(File baseDir) {
+        if (baseDir == null) return;
         try {
-            File shaderDir = new File(extDir, "cache/shaders/shareable");
+            File shaderDir = new File(baseDir, "cache/shaders/shareable");
             if (!shaderDir.exists()) {
                 shaderDir.mkdirs();
             }
@@ -1233,23 +1248,26 @@ public class TitleActivity extends Activity {
             };
             for (String fileName : shaderFiles) {
                 File target = new File(shaderDir, fileName);
-                try (java.io.InputStream in = getAssets().open("shaders/shareable/" + fileName)) {
-                    long assetSize = in.available();
-                    if (!target.exists() || target.length() < assetSize) {
-                        try (java.io.FileOutputStream out = new java.io.FileOutputStream(target)) {
-                            byte[] buf = new byte[8192];
-                            int read;
-                            while ((read = in.read(buf)) != -1) {
-                                out.write(buf, 0, read);
-                            }
-                            android.util.Log.i("RERev2-Title", "Extracted bundled shader asset: " + fileName + " (" + target.length() + " bytes)");
-                        }
+                boolean needsExtract = !target.exists() || target.length() == 0;
+                if (fileName.contains("prebaked") && target.exists() && target.length() < 1024 * 1024) {
+                    needsExtract = true;
+                }
+                if (!needsExtract) {
+                    continue;
+                }
+                try (java.io.InputStream in = getAssets().open("shaders/shareable/" + fileName);
+                     java.io.FileOutputStream out = new java.io.FileOutputStream(target)) {
+                    byte[] buf = new byte[65536];
+                    int read;
+                    while ((read = in.read(buf)) != -1) {
+                        out.write(buf, 0, read);
                     }
+                    android.util.Log.i("RERev2-Title", "Extracted bundled shader asset: " + fileName + " (" + target.length() + " bytes)");
                 } catch (Exception ignored) {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w("RERev2-Title", "Error extracting shader assets", e);
+            android.util.Log.w("RERev2-Title", "Error extracting shader assets to " + baseDir, e);
         }
     }
 

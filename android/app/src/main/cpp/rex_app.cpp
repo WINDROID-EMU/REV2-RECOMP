@@ -49,6 +49,8 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <string_view>
 
@@ -496,6 +498,38 @@ static void InitBionicPthreadFix() {
 
 }  // namespace
 #endif
+
+// ============================================================================
+//  Engine FPS counter — measured directly from game VdSwap presents.
+//
+//  __imp__VdSwap is the Xbox 360 kernel call that triggers a frame swap.  The
+//  recompiler calls it once per rendered game frame (see RERev2_recomp.25.cpp
+//  line 330344).  We intercept it with a raw hook, forward to the original and
+//  then bump an atomic counter that is read by the SetGuestFrameStats lambda
+//  registered in LaunchModule below.
+//
+//  The global is also read by nativeGetEngineFps() in android_input_driver.cpp
+//  (exposed to Java as GameActivity.nativeGetEngineFps) for the on-screen HUD.
+// ============================================================================
+#include <rex/hook.h>
+#include <rex/ppc/context.h>
+
+// Defined here, declared extern in android_input_driver.cpp.
+std::atomic<float>  g_rerev2_engine_fps{0.0f};
+
+// Private frame-swap counter; read by the FrameStats lambda below.
+static std::atomic<uint64_t> g_rerev2_swap_count{0};
+
+// Forward declaration from the generated code.
+REX_EXTERN(__imp__VdSwap);
+
+// Raw hook: runs on the GPU-emulation thread that calls VdSwap.
+REX_HOOK_RAW(__imp__VdSwap) {
+  // Call the real Xbox 360 VdSwap implementation first.
+  ::__imp__VdSwap(ctx, base);
+  // Then record the present.
+  g_rerev2_swap_count.fetch_add(1, std::memory_order_relaxed);
+}
 
 namespace rex {
 
@@ -1112,6 +1146,63 @@ void ReXApp::LaunchModule() {
 
     OnPreLaunchModule();
 
+    // ----------------------------------------------------------------
+    //  Register the engine-FPS provider so the F3 debug overlay shows
+    //  real game frame rate (from VdSwap counts), not display hz.
+    // ----------------------------------------------------------------
+    SetGuestFrameStats([this]() -> ui::FrameStats {
+      using Clk = std::chrono::steady_clock;
+      struct State {
+        Clk::time_point last_time{};
+        uint64_t        last_count = 0;
+        double          smooth_ms  = 0.0;
+        bool            valid      = false;
+        ui::FrameStats  result{};
+      };
+      static State s;
+
+      const auto   now   = Clk::now();
+      const uint64_t total = g_rerev2_swap_count.load(std::memory_order_relaxed);
+
+      s.result.frame_count = total > 0 ? total : 1;
+
+      if (!s.valid) {
+        s.valid      = true;
+        s.last_time  = now;
+        s.last_count = total;
+        return s.result;
+      }
+
+      const double dt_ms =
+          std::chrono::duration<double, std::milli>(now - s.last_time).count();
+      if (dt_ms < 900.0) {
+        return s.result;   // wait for ~1 s window
+      }
+
+      const uint64_t done = total - s.last_count;
+      s.last_time  = now;
+      s.last_count = total;
+
+      if (done == 0) {
+        s.smooth_ms = 0.0;
+        s.result.fps           = 0.0;
+        s.result.frame_time_ms = dt_ms;
+        g_rerev2_engine_fps.store(0.0f, std::memory_order_relaxed);
+        return s.result;
+      }
+
+      const double ms_per = dt_ms / static_cast<double>(done);
+      s.smooth_ms = (s.smooth_ms <= 0.0 || dt_ms > 5000.0)
+                    ? ms_per
+                    : (s.smooth_ms + ms_per) * 0.5;
+      s.result.frame_time_ms = s.smooth_ms;
+      s.result.fps           = 1000.0 / s.smooth_ms;
+      g_rerev2_engine_fps.store(static_cast<float>(s.result.fps),
+                                std::memory_order_relaxed);
+      return s.result;
+    });
+
+
     __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid", "Preparing module launch...");
     auto main_thread = runtime_->PrepareModuleLaunch();
     if (!main_thread) {
@@ -1124,11 +1215,16 @@ void ReXApp::LaunchModule() {
 
     auto* graphics_system = runtime_->graphics_system();
     if (graphics_system && !runtime_->cache_root().empty()) {
-      uint32_t title_id = runtime_->kernel_state()->title_id();
-      if (title_id != 0) {
-        REXLOG_INFO("Initializing shader storage for title {:08X}...", title_id);
-        graphics_system->InitializeShaderStorage(runtime_->cache_root(), title_id, true);
+      uint32_t title_id = runtime_->kernel_state() ? runtime_->kernel_state()->title_id() : 0;
+      if (title_id == 0) {
+        title_id = 0x5841144C;  // Resident Evil: Revelations 2 Title ID fallback
       }
+      REXLOG_INFO("Initializing shader storage for title {:08X} (cache_root: {})...",
+                  title_id, runtime_->cache_root().string());
+      __android_log_print(ANDROID_LOG_INFO, "NFS-MainAndroid",
+                          "Initializing shader storage for title %08X at %s",
+                          title_id, runtime_->cache_root().c_str());
+      graphics_system->InitializeShaderStorage(runtime_->cache_root(), title_id, true);
     }
 
     OnPostLaunchModule(main_thread.get());

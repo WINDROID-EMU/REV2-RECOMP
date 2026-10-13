@@ -7,7 +7,10 @@ import android.graphics.drawable.ColorDrawable;
 import android.hardware.input.InputManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.InputDevice;
 import android.view.InputEvent;
@@ -15,7 +18,9 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import com.windroid.emu.views.VirtualControllerInputView;
 
@@ -42,10 +47,20 @@ public class GameActivity extends NativeActivity {
     public static native void nativeSetVirtualGamepad(
             int buttons, float thumbLx, float thumbLy, float thumbRx, float thumbRy, float leftTrigger, float rightTrigger);
 
+    /** Returns engine FPS measured from VdSwap presents (0 until the game renders its first frame). */
+    public static native float nativeGetEngineFps();
+
     private VirtualControllerInputView controlsView;
     private PopupWindow controlsPopup;
     private InputManager inputManager;
     private InputManager.InputDeviceListener inputDeviceListener;
+
+    // ── Engine FPS overlay ────────────────────────────────────────────────────
+    private TextView    fpsTextView;
+    private Handler     fpsPollHandler;
+    private Runnable    fpsPollRunnable;
+    private static final long FPS_POLL_INTERVAL_MS = 500L;
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +151,73 @@ public class GameActivity extends NativeActivity {
 
         if (inputManager != null) {
             inputManager.registerInputDeviceListener(inputDeviceListener, null);
+        }
+
+        // ── Engine FPS overlay setup ──────────────────────────────────────────
+        setupFpsOverlay();
+    }
+
+    /** Creates a minimal on-screen FPS label embedded in the decor view (top-left corner). */
+    private void setupFpsOverlay() {
+        fpsTextView = new TextView(this);
+        fpsTextView.setId(View.generateViewId());
+
+        // Styling: semi-transparent black background, amber monospaced text
+        fpsTextView.setBackgroundColor(Color.argb(130, 0, 0, 0));
+        fpsTextView.setTextColor(Color.rgb(255, 200, 50));   // amber
+        fpsTextView.setTypeface(android.graphics.Typeface.MONOSPACE);
+        fpsTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        fpsTextView.setPadding(10, 4, 10, 4);
+        fpsTextView.setText("-- FPS");
+        fpsTextView.setAlpha(0.88f);
+
+        // Anchor to top-left of the decor view; this requires no special permission.
+        FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        flp.gravity    = Gravity.TOP | Gravity.START;
+        flp.leftMargin = 12;
+        flp.topMargin  = 12;
+
+        View decor = getWindow().getDecorView();
+        if (decor instanceof FrameLayout) {
+            ((FrameLayout) decor).addView(fpsTextView, flp);
+            startFpsPoller();
+        } else {
+            Log.w(TAG, "FPS overlay: decor view is not a FrameLayout, skipping");
+            fpsTextView = null;
+        }
+    }
+
+    /** Starts polling nativeGetEngineFps() every FPS_POLL_INTERVAL_MS. */
+    private void startFpsPoller() {
+        fpsPollHandler  = new Handler(Looper.getMainLooper());
+        fpsPollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateFpsDisplay();
+                if (fpsPollHandler != null) {
+                    fpsPollHandler.postDelayed(this, FPS_POLL_INTERVAL_MS);
+                }
+            }
+        };
+        fpsPollHandler.postDelayed(fpsPollRunnable, FPS_POLL_INTERVAL_MS);
+    }
+
+    /** Reads nativeGetEngineFps() and updates the overlay label. */
+    private void updateFpsDisplay() {
+        if (fpsTextView == null) return;
+        try {
+            float fps = nativeGetEngineFps();
+            if (fps < 0.5f) {
+                fpsTextView.setText("-- FPS");
+            } else {
+                float ms = (fps > 0) ? 1000.0f / fps : 0.0f;
+                fpsTextView.setText(String.format(java.util.Locale.US,
+                        "%.1f FPS | %.1f ms", fps, ms));
+            }
+        } catch (UnsatisfiedLinkError | Exception ignored) {
+            // native lib not yet loaded
         }
     }
 
@@ -347,6 +429,21 @@ public class GameActivity extends NativeActivity {
 
     @Override
     protected void onDestroy() {
+        // Stop the FPS poller first.
+        if (fpsPollHandler != null) {
+            fpsPollHandler.removeCallbacks(fpsPollRunnable);
+            fpsPollHandler = null;
+        }
+        // Detach the FPS label from the decor view.
+        if (fpsTextView != null) {
+            try {
+                View parent = (View) fpsTextView.getParent();
+                if (parent instanceof FrameLayout) {
+                    ((FrameLayout) parent).removeView(fpsTextView);
+                }
+            } catch (Exception ignored) {}
+            fpsTextView = null;
+        }
         if (inputManager != null && inputDeviceListener != null) {
             try {
                 inputManager.unregisterInputDeviceListener(inputDeviceListener);

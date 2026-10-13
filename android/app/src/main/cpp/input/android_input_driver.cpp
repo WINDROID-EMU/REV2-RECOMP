@@ -2,8 +2,13 @@
 #include <android/log.h>
 #include <android/keycodes.h>
 #include <rex/input/device_assignment.h>
+#include <atomic>
 #include <cmath>
 #include <algorithm>
+
+// Shared engine FPS value written by the VdSwap hook in rex_app.cpp.
+// Declared extern here; defined there. Zero-initialised at start-up.
+extern std::atomic<float> g_rerev2_engine_fps;
 
 #define TAG "NFS-AndroidInput"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -66,6 +71,13 @@ Java_com_capcom_rerev2_GameActivity_nativeSetVirtualGamepad(
   }
 }
 
+// Returns the engine FPS measured directly from game VdSwap presents.
+extern "C" JNIEXPORT jfloat JNICALL
+Java_com_capcom_rerev2_GameActivity_nativeGetEngineFps(
+    JNIEnv* env, jclass clazz) {
+  return static_cast<jfloat>(g_rerev2_engine_fps.load(std::memory_order_relaxed));
+}
+
 void RegisterVirtualGamepadJNI(void* java_vm, void* activity_obj) {
   if (!java_vm || !activity_obj) {
     LOGI("RegisterVirtualGamepadJNI: null parameters");
@@ -95,7 +107,10 @@ void RegisterVirtualGamepadJNI(void* java_vm, void* activity_obj) {
   static const JNINativeMethod methods[] = {
       { const_cast<char*>("nativeSetVirtualGamepad"),
         const_cast<char*>("(IFFFFFF)V"),
-        reinterpret_cast<void*>(&Java_com_capcom_rerev2_GameActivity_nativeSetVirtualGamepad) }
+        reinterpret_cast<void*>(&Java_com_capcom_rerev2_GameActivity_nativeSetVirtualGamepad) },
+      { const_cast<char*>("nativeGetEngineFps"),
+        const_cast<char*>("()F"),
+        reinterpret_cast<void*>(&Java_com_capcom_rerev2_GameActivity_nativeGetEngineFps) }
   };
 
   if (env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(methods[0])) < 0) {
@@ -105,7 +120,7 @@ void RegisterVirtualGamepadJNI(void* java_vm, void* activity_obj) {
       env->ExceptionClear();
     }
   } else {
-    LOGI("RegisterVirtualGamepadJNI: RegisterNatives SUCCEEDED for GameActivity.nativeSetVirtualGamepad");
+    LOGI("RegisterVirtualGamepadJNI: RegisterNatives SUCCEEDED for GameActivity native methods (VirtualGamepad + EngineFps)");
   }
 
   env->DeleteLocalRef(clazz);

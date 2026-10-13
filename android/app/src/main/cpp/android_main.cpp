@@ -377,12 +377,13 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("gamma_render_target_as_unorm16", "false");
   SetDefaultFlag("depth_transfer_not_equal_test", "false");
   SetDefaultFlag("clear_memory_page_state", "false");
-  // Mobile devices have less unified memory bandwidth than desktop GPUs.
-  // Android limits are kept below desktop defaults (24/384 MB), not above them.
-  // Previous values (96/512 MB) were backwards and caused memory contention.
+  // Mobile devices memory cache configuration (384MB soft / 768MB hard prevents aggressive texture thrashing)
   SetDefaultFlag("texture_cache_memory_limit_render_to_texture", "16");
-  SetDefaultFlag("texture_cache_memory_limit_soft", "256");
+  SetDefaultFlag("texture_cache_memory_limit_soft", "384");
+  SetDefaultFlag("texture_cache_memory_limit_hard", "768");
+  SetDefaultFlag("texture_cache_memory_limit_soft_lifetime", "60");
   SetDefaultFlag("vulkan_pipeline_creation_threads", "4");
+  SetDefaultFlag("vulkan_sparse_shared_memory", "true");
   SetDefaultFlag("store_shaders", "true");
   SetDefaultFlag("vsync", "false");
   SetDefaultFlag("mnk_mode", "false");
@@ -402,7 +403,6 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("force_convert_quad_lists_to_triangle_lists", "true");
   SetDefaultFlag("vulkan_force_convert_quad_lists_to_triangle_lists", "true");
   SetDefaultFlag("force_convert_triangle_fans_to_lists", "true");
-  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "true");
   SetDefaultFlag("mrt_edram_used_range_clamp_to_min", "true");
 
   // Mobile viewport & texture fetch optimizations (aniso 0 = bilinear filtering for maximum bandwidth)
