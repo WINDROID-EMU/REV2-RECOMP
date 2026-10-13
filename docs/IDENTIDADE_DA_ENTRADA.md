@@ -38,4 +38,4 @@
 - **ReXGlue SDK:** v0.10.0-dev
 - **GPU Backend:** Vulkan 1.2 / 1.3 (Adreno Turnip / Vulkan Host)
 - **Shader Pipeline:** 584 Shaders Xenos traduzidos com correspondência de 1:1 nos Pipeline State Objects (584/584 entries).
-- **Isolamento de Projeto:** 100% isolado de outros títulos (sem reutilização de caches do NFSMW `454107D9`).
+- **Isolamento de Projeto:** 100% isolado e autônomo, específico e exclusivo de Resident Evil: Revelations 2 (Title ID `5841144C`), sem compartilhamento de shaders ou dependências de outros jogos.

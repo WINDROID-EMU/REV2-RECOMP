@@ -1283,14 +1283,14 @@ public class TitleActivity extends Activity {
                 shaderDir.mkdirs();
             }
 
-            // 1. Purge any legacy NFSMW cache files (Title ID 454107D9)
+            // 1. Purge any foreign/stale cache files not belonging to RERev2 (Title ID 5841144C)
             File[] existingFiles = shaderDir.listFiles();
             if (existingFiles != null) {
                 for (File f : existingFiles) {
                     String name = f.getName();
-                    if (name.startsWith("454107D9")) {
+                    if (!name.startsWith("5841144C")) {
                         f.delete();
-                        android.util.Log.i("RERev2-Title", "Purged legacy NFSMW cache file: " + name);
+                        android.util.Log.i("RERev2-Title", "Purged foreign/stale cache file: " + name);
                     }
                 }
             }

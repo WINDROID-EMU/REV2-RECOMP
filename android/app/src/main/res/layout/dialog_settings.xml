@@ -283,7 +283,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="ℹ Apaga caches antigos/residuais do NFSMW ou runs anteriores e restaura os shaders limpos de Resident Evil Revelations 2 (5841144C)."
+                android:text="ℹ Apaga caches antigos ou corrompidos e restaura os shaders limpos oficiais de Resident Evil Revelations 2 (5841144C)."
                 android:textColor="#B0B0B0"
                 android:textSize="12sp"
                 android:layout_marginBottom="12dp" />
