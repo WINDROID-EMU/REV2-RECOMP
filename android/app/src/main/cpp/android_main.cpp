@@ -345,9 +345,22 @@ void android_main(struct android_app* state) {
   char* dummy_argv[] = { const_cast<char*>("RERev2"), nullptr };
   rex::cvar::Init(1, dummy_argv);
 
-  // 1. Set baseline default flags for Android mobile platform
+  // Optional user overrides (rerev2.toml in storage directory) loaded before defaults
+  if (!media_path.empty()) {
+    rex::cvar::LoadConfig(media_path / "rerev2.toml");
+  }
+  if (external_path && external_path[0]) {
+    rex::cvar::LoadConfig(std::filesystem::path(external_path) / "rerev2.toml");
+  }
+  if (internal_path && internal_path[0]) {
+    rex::cvar::LoadConfig(std::filesystem::path(internal_path) / "rerev2.toml");
+  }
+
+  // Set default baseline flags for Android mobile platform only if not already specified by config
   auto SetDefaultFlag = [](std::string_view name, std::string_view val) {
-    rex::cvar::SetFlagByName(name, val);
+    if (rex::cvar::GetFlagSource(name) == rex::cvar::Source::kDefault) {
+      rex::cvar::SetFlagByName(name, val);
+    }
   };
 
   SetDefaultFlag("gpu_backend", "vulkan");
@@ -355,51 +368,29 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("render_target_path_d3d12", "rtv");
   SetDefaultFlag("render_target_path_vulkan", "fbo");
   SetDefaultFlag("readback_resolve", "none");
-  SetDefaultFlag("vulkan_readback_resolve", "false");
   SetDefaultFlag("async_shader_compilation", "true");
-  // CRITICAL: Prevent hard rendering freezes on pipeline creation by skipping incomplete frames
-  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "true");
+  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "false");
   SetDefaultFlag("vulkan_submit_on_primary_buffer_end", "false");
   SetDefaultFlag("vulkan_dynamic_rendering", "false");
   SetDefaultFlag("native_2x_msaa", "false");
   SetDefaultFlag("gamma_render_target_as_unorm16", "false");
   SetDefaultFlag("depth_transfer_not_equal_test", "false");
   SetDefaultFlag("clear_memory_page_state", "false");
-  // Mobile texture cache configuration (512MB soft / 1024MB hard prevents thrashing)
+  // Mobile devices have less unified memory bandwidth than desktop GPUs.
+  // Android limits are kept below desktop defaults (24/384 MB), not above them.
   SetDefaultFlag("texture_cache_memory_limit_render_to_texture", "16");
-  SetDefaultFlag("texture_cache_memory_limit_soft", "512");
-  SetDefaultFlag("texture_cache_memory_limit_hard", "1024");
-  SetDefaultFlag("texture_cache_memory_limit_soft_lifetime", "60");
-  // Use 2 creation threads to prevent starving MT Framework's 19 engine/audio threads
+  SetDefaultFlag("texture_cache_memory_limit_soft", "256");
   SetDefaultFlag("vulkan_pipeline_creation_threads", "2");
-  SetDefaultFlag("vulkan_sparse_shared_memory", "true");
   SetDefaultFlag("store_shaders", "true");
-  SetDefaultFlag("vsync", "false");
+  SetDefaultFlag("vsync", "true");
   SetDefaultFlag("mnk_mode", "false");
   SetDefaultFlag("present_letterbox", "false");
 
-  // Mobile Adreno GPU present & pipeline optimizations
-  SetDefaultFlag("execute_unclipped_draw_vs_on_cpu", "false");
-  SetDefaultFlag("execute_unclipped_draw_vs_on_cpu_for_psi_render_backend", "false");
-  SetDefaultFlag("execute_unclipped_draw_vs_on_cpu_with_scissor", "false");
-  SetDefaultFlag("readback_memexport", "false");
-  SetDefaultFlag("readback_memexport_fast", "false");
-  SetDefaultFlag("vulkan_readback_memexport", "false");
-  SetDefaultFlag("occlusion_query_enable", "false");
-  SetDefaultFlag("vulkan_allow_present_mode_mailbox", "true");
-  SetDefaultFlag("vulkan_allow_present_mode_immediate", "true");
-  SetDefaultFlag("vulkan_allow_present_mode_fifo_relaxed", "true");
-  SetDefaultFlag("force_convert_quad_lists_to_triangle_lists", "true");
-  SetDefaultFlag("vulkan_force_convert_quad_lists_to_triangle_lists", "true");
-  SetDefaultFlag("force_convert_triangle_fans_to_lists", "true");
-  SetDefaultFlag("mrt_edram_used_range_clamp_to_min", "true");
-  SetDefaultFlag("direct_host_resolve", "true");
-
-  // Mobile viewport & texture fetch optimizations (aniso 0 = bilinear filtering for maximum bandwidth)
+  // 1280x720 Native Xbox 360 resolution fits within Adreno 650/730 GMEM on-chip tile memory
   SetDefaultFlag("video_mode_width", "1280");
   SetDefaultFlag("video_mode_height", "720");
   SetDefaultFlag("resolution_scale", "1");
-  SetDefaultFlag("anisotropic_override", "0");
+  SetDefaultFlag("anisotropic_override", "1");
 
   // Adreno performance & logging optimizations
   SetDefaultFlag("query_occlusion_fake_sample_count", "1");
@@ -412,17 +403,6 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("log_noisy", "false");
   SetDefaultFlag("log_verbose", "false");
   SetDefaultFlag("protect_zero", "false");
-
-  // 2. Load user overrides (rerev2.toml) so user settings strictly take precedence
-  if (!media_path.empty()) {
-    rex::cvar::LoadConfig(media_path / "rerev2.toml");
-  }
-  if (external_path && external_path[0]) {
-    rex::cvar::LoadConfig(std::filesystem::path(external_path) / "rerev2.toml");
-  }
-  if (internal_path && internal_path[0]) {
-    rex::cvar::LoadConfig(std::filesystem::path(internal_path) / "rerev2.toml");
-  }
 
   LOGI("Effective GPU plugin cvar: %s", rex::cvar::GetFlagByName("gpu_plugin").c_str());
 

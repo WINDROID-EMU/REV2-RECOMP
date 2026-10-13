@@ -78,9 +78,6 @@ if [ -z "$ANDROID_HOME" ] && [ -z "$ANDROID_SDK_ROOT" ]; then
     fi
 fi
 
-export ANDROID_USER_HOME="${ANDROID_DIR}/.android"
-mkdir -p "$ANDROID_USER_HOME"
-
 if [ -n "$ANDROID_HOME" ]; then
     echo "[+] Android SDK: $ANDROID_HOME"
 else

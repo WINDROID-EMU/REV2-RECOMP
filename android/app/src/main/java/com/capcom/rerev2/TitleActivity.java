@@ -999,19 +999,19 @@ public class TitleActivity extends Activity {
         Button btnReset = dialogView.findViewById(R.id.btn_reset_defaults);
         if (btnReset != null) {
             btnReset.setOnClickListener(v -> {
-                spResolution.setSelection(2);
-                spResolutionScale.setSelection(0);
-                spGpuPlugin.setSelection(0);
-                spEdramPath.setSelection(0);
-                spPipelineThreads.setSelection(1);
-                spTextureCacheLimit.setSelection(2);
-                spAnisotropic.setSelection(2);
-                spAntialiasing.setSelection(0);
-                spLogLevel.setSelection(2);
+                spResolution.setSelection(0); // 720p (Native Xbox 360)
+                spResolutionScale.setSelection(0); // 1x
+                spGpuPlugin.setSelection(0); // xenos
+                spEdramPath.setSelection(0); // rtv
+                spPipelineThreads.setSelection(1); // 2 threads
+                spTextureCacheLimit.setSelection(0); // 256 MB
+                spAnisotropic.setSelection(1); // 1x
+                spAntialiasing.setSelection(0); // none
+                spLogLevel.setSelection(2); // info
                 cbVsync.setChecked(true);
                 cbStretchScreen.setChecked(true);
                 cbAsyncShaders.setChecked(true);
-                cbAsyncSkip.setChecked(true);
+                cbAsyncSkip.setChecked(false);
                 cbGpu3dTo2d.setChecked(true);
                 cbReadbackResolve.setChecked(false);
                 cbNativeMsaa.setChecked(false);
@@ -1023,7 +1023,7 @@ public class TitleActivity extends Activity {
                 cbGrantPrivileges.setChecked(false);
                 sbGameSpeed.setProgress(100);
                 etGamertag.setText("Player");
-                Toast.makeText(TitleActivity.this, "Optimized Android defaults restored.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TitleActivity.this, "Padrões nativos 720p restaurados.", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -1163,18 +1163,8 @@ public class TitleActivity extends Activity {
             toml.append("async_shader_compilation = ").append(asyncShaders ? "true" : "false").append((char) 10);
             toml.append("vulkan_pipeline_creation_threads = ").append(pipelineThreads).append((char) 10);
             toml.append("texture_cache_memory_limit_soft = ").append(textureCacheLimit).append((char) 10);
-            toml.append("texture_cache_memory_limit_hard = ").append(textureCacheLimit * 2).append((char) 10);
-            toml.append("texture_cache_memory_limit_soft_lifetime = 60").append((char) 10);
-            toml.append("texture_cache_memory_limit_render_to_texture = 16").append((char) 10);
-            toml.append("vulkan_sparse_shared_memory = true").append((char) 10);
-            toml.append("store_shaders = true").append((char) 10);
             toml.append("gpu_3d_to_2d_texture = ").append(gpu3dTo2d ? "true" : "false").append((char) 10);
-
             toml.append("readback_resolve = ").append((char) 34).append(readback ? "fast" : "none").append((char) 34).append((char) 10);
-            toml.append("vulkan_readback_resolve = ").append(readback ? "true" : "false").append((char) 10);
-            toml.append("vulkan_readback_memexport = false").append((char) 10);
-            toml.append("readback_memexport = false").append((char) 10);
-            toml.append("readback_memexport_fast = false").append((char) 10);
             toml.append("native_2x_msaa = ").append(nativeMsaa ? "true" : "false").append((char) 10);
             toml.append("gamma_render_target_as_unorm16 = false").append((char) 10).append((char) 10);
 
@@ -1192,20 +1182,9 @@ public class TitleActivity extends Activity {
             }
             toml.append("protect_zero = false").append((char) 10);
             toml.append("query_occlusion_fake_sample_count = 1").append((char) 10);
-            toml.append("occlusion_query_enable = false").append((char) 10);
             toml.append("primitive_processor_cache_min_indices = -1").append((char) 10);
             toml.append("clear_memory_page_state = false").append((char) 10);
             toml.append("depth_transfer_not_equal_test = false").append((char) 10);
-            toml.append("execute_unclipped_draw_vs_on_cpu = false").append((char) 10);
-            toml.append("execute_unclipped_draw_vs_on_cpu_for_psi_render_backend = false").append((char) 10);
-            toml.append("execute_unclipped_draw_vs_on_cpu_with_scissor = false").append((char) 10);
-            toml.append("force_convert_quad_lists_to_triangle_lists = true").append((char) 10);
-            toml.append("vulkan_force_convert_quad_lists_to_triangle_lists = true").append((char) 10);
-            toml.append("force_convert_triangle_fans_to_lists = true").append((char) 10);
-            toml.append("mrt_edram_used_range_clamp_to_min = true").append((char) 10);
-            toml.append("vulkan_allow_present_mode_mailbox = true").append((char) 10);
-            toml.append("vulkan_allow_present_mode_immediate = true").append((char) 10);
-            toml.append("vulkan_allow_present_mode_fifo_relaxed = true").append((char) 10);
 
             String tomlContent = toml.toString();
 
