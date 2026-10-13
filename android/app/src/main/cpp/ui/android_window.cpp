@@ -47,8 +47,8 @@ void AndroidWindow::AttachNativeWindow(ANativeWindow* window) {
     int32_t target_w = REXCVAR_GET(video_mode_width);
     int32_t target_h = REXCVAR_GET(video_mode_height);
     if (target_w <= 0 || target_h <= 0) {
-      target_w = static_cast<int32_t>(desired_logical_width());
-      target_h = static_cast<int32_t>(desired_logical_height());
+      target_w = static_cast<int32_t>(GetDesiredLogicalWidth());
+      target_h = static_cast<int32_t>(GetDesiredLogicalHeight());
     }
     if (target_w <= 0 || target_h <= 0) {
       target_w = ANativeWindow_getWidth(native_window_);
