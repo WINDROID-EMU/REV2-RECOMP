@@ -909,8 +909,8 @@ public class TitleActivity extends Activity {
         setupSpinner(spLogLevel, logLabels);
 
         // Load saved values
-        String curRes = prefs.getString(KEY_RESOLUTION, "720p");
-        spResolution.setSelection(findStringIndex(resValues, curRes, 0));
+        String curRes = prefs.getString(KEY_RESOLUTION, "480p");
+        spResolution.setSelection(findStringIndex(resValues, curRes, 2));
 
         int curScale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
         spResolutionScale.setSelection(findIntIndex(scaleValues, curScale, 0));
@@ -999,7 +999,7 @@ public class TitleActivity extends Activity {
         Button btnReset = dialogView.findViewById(R.id.btn_reset_defaults);
         if (btnReset != null) {
             btnReset.setOnClickListener(v -> {
-                spResolution.setSelection(0); // 720p (Native Xbox 360)
+                spResolution.setSelection(2); // 480p (Lightest / Mobile Performance)
                 spResolutionScale.setSelection(0); // 1x
                 spGpuPlugin.setSelection(0); // xenos
                 spEdramPath.setSelection(0); // rtv
@@ -1023,7 +1023,7 @@ public class TitleActivity extends Activity {
                 cbGrantPrivileges.setChecked(false);
                 sbGameSpeed.setProgress(100);
                 etGamertag.setText("Player");
-                Toast.makeText(TitleActivity.this, "Padrões nativos 720p restaurados.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TitleActivity.this, "Padrões móveis 480p restaurados.", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -1100,7 +1100,7 @@ public class TitleActivity extends Activity {
         try {
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-            String res = prefs.getString(KEY_RESOLUTION, "720p");
+            String res = prefs.getString(KEY_RESOLUTION, "480p");
             int scale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
             String plugin = prefs.getString(KEY_GPU_PLUGIN, "xenos");
             boolean vsync = prefs.getBoolean(KEY_VSYNC, true);
@@ -1123,10 +1123,10 @@ public class TitleActivity extends Activity {
             String logLevel = prefs.getString(KEY_LOG_LEVEL, "info");
             int speed = prefs.getInt(KEY_GAME_SPEED, 100);
 
-            int width = 1280;
-            int height = 720;
-            if ("480p".equalsIgnoreCase(res)) {
-                width = 854; height = 480;
+            int width = 854;
+            int height = 480;
+            if ("720p".equalsIgnoreCase(res)) {
+                width = 1280; height = 720;
             } else if ("540p".equalsIgnoreCase(res)) {
                 width = 960; height = 540;
             } else if ("1080p".equalsIgnoreCase(res)) {
@@ -1185,6 +1185,7 @@ public class TitleActivity extends Activity {
             toml.append("primitive_processor_cache_min_indices = -1").append((char) 10);
             toml.append("clear_memory_page_state = false").append((char) 10);
             toml.append("depth_transfer_not_equal_test = false").append((char) 10);
+            toml.append("mrt_edram_used_range_clamp_to_min = true").append((char) 10);
 
             String tomlContent = toml.toString();
 

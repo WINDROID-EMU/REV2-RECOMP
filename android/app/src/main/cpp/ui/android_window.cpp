@@ -33,17 +33,31 @@ AndroidWindow::~AndroidWindow() {
   LOGI("AndroidWindow destroyed");
 }
 
+#include <rex/ui/flags.h>
+
 void AndroidWindow::AttachNativeWindow(ANativeWindow* window) {
   native_window_ = window;
   is_attached_ = (window != nullptr);
   rex::platform::android::AndroidBridge::SetNativeWindow(window);
 
   if (native_window_) {
-    int32_t w = ANativeWindow_getWidth(native_window_);
-    int32_t h = ANativeWindow_getHeight(native_window_);
-    if (w > 0 && h > 0) {
-      ANativeWindow_setBuffersGeometry(native_window_, w, h, WINDOW_FORMAT_RGBA_8888);
-      UpdateDimensions(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+    // Adapt swapchain buffer geometry to configured game video mode resolution (e.g. 854x480 for 480p).
+    // The device hardware display controller (HWComposer) performs full-screen upscaling
+    // in dedicated hardware with zero GPU pixel fillrate overhead.
+    int32_t target_w = REXCVAR_GET(video_mode_width);
+    int32_t target_h = REXCVAR_GET(video_mode_height);
+    if (target_w <= 0 || target_h <= 0) {
+      target_w = static_cast<int32_t>(desired_logical_width());
+      target_h = static_cast<int32_t>(desired_logical_height());
+    }
+    if (target_w <= 0 || target_h <= 0) {
+      target_w = ANativeWindow_getWidth(native_window_);
+      target_h = ANativeWindow_getHeight(native_window_);
+    }
+    if (target_w > 0 && target_h > 0) {
+      ANativeWindow_setBuffersGeometry(native_window_, target_w, target_h, WINDOW_FORMAT_RGBA_8888);
+      UpdateDimensions(static_cast<uint32_t>(target_w), static_cast<uint32_t>(target_h));
+      LOGI("ANativeWindow buffer geometry set to %dx%d (hardware display upscaling active)", target_w, target_h);
     }
   }
 

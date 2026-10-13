@@ -386,11 +386,16 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("mnk_mode", "false");
   SetDefaultFlag("present_letterbox", "false");
 
-  // 1280x720 Native Xbox 360 resolution fits within Adreno 650/730 GMEM on-chip tile memory
-  SetDefaultFlag("video_mode_width", "1280");
-  SetDefaultFlag("video_mode_height", "720");
+  // 854x480 (480p 16:9 widescreen) presentation resolution for mobile efficiency.
+  // Hardware Composer performs zero-overhead hardware scaling on the display controller.
+  SetDefaultFlag("video_mode_width", "854");
+  SetDefaultFlag("video_mode_height", "480");
+  SetDefaultFlag("resolution", "480p");
   SetDefaultFlag("resolution_scale", "1");
   SetDefaultFlag("anisotropic_override", "1");
+
+  // MRT & Render Target Optimization: clamp used eDRAM range to active render targets
+  SetDefaultFlag("mrt_edram_used_range_clamp_to_min", "true");
 
   // Adreno performance & logging optimizations
   SetDefaultFlag("query_occlusion_fake_sample_count", "1");
