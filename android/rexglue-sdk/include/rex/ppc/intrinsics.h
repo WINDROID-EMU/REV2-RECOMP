@@ -236,6 +236,7 @@ inline simde__m128i simde_mm_vsl(simde__m128i a, simde__m128i b) {
   if (shift == 0)
     return a;
 
+#if defined(__aarch64__) || defined(_M_ARM64)
   // ARM64 NEON implementation using vld1/vst1 for conversion
   uint64_t vals[2];
   uint64_t res[2] = {0, 0};
@@ -263,6 +264,15 @@ inline simde__m128i simde_mm_vsl(simde__m128i a, simde__m128i b) {
   // Store back to memory and reload as simde__m128i
   vst1q_u64(res, result_vec);
   return simde_mm_load_si128((simde__m128i*)res);
+#else
+  uint64_t vals[2];
+  simde_mm_store_si128((simde__m128i*)vals, a);
+  uint64_t low = vals[0] << shift;
+  uint64_t high = (vals[1] << shift) | (vals[0] >> (64 - shift));
+  vals[0] = low;
+  vals[1] = high;
+  return simde_mm_load_si128((simde__m128i*)vals);
+#endif
 }
 
 // Vector Shift Left by Octet - shift entire vector left by bytes in bits [121:124] of vB

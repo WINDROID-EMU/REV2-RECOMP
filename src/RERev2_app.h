@@ -30,5 +30,16 @@ class Rerev2App : public rex::ReXApp {
     if (config.gpu_plugin.empty()) {
       config.gpu_plugin = "xenos";
     }
+    // High performance defaults: eliminates micro-stutters and PCIe readback stalls
+    rex::cvar::SetFlagByName("vulkan_async_skip_incomplete_frames", "true");
+    rex::cvar::SetFlagByName("async_shader_compilation", "true");
+    rex::cvar::SetFlagByName("readback_resolve", "none");
+    rex::cvar::SetFlagByName("texture_cache_memory_limit_soft", "1024");
+    rex::cvar::SetFlagByName("texture_cache_memory_limit_hard", "2048");
+    rex::cvar::SetFlagByName("gpu_3d_to_2d_texture", "true");
+    rex::cvar::SetFlagByName("vulkan_pipeline_creation_threads", "6");
+    rex::cvar::SetFlagByName("log_level", "warning");
+    rex::cvar::SetFlagByName("log_noisy", "false");
+    rex::cvar::SetFlagByName("log_verbose", "false");
   }
 };

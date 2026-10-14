@@ -11,17 +11,35 @@
 
 #pragma once
 
-// Platform definition: ReXGlue ARM64 Android
+// Platform definition
+#if defined(__ANDROID__)
 #define REX_PLATFORM_ANDROID 1
 #define REX_PLATFORM_LINUX 1
+#define REX_PLATFORM_GNU_LINUX 0
+#elif defined(__linux__)
+#define REX_PLATFORM_ANDROID 0
+#define REX_PLATFORM_LINUX 1
+#define REX_PLATFORM_GNU_LINUX 1
+#else
+#define REX_PLATFORM_ANDROID 0
+#define REX_PLATFORM_LINUX 0
+#define REX_PLATFORM_GNU_LINUX 0
+#endif
 
 #define REX_PLATFORM_WIN32 0
 #define REX_PLATFORM_MAC 0
-#define REX_PLATFORM_GNU_LINUX 0
 
-// Architecture definition: ARM64 (aarch64)
+// Architecture definition
+#if defined(__aarch64__) || defined(_M_ARM64)
 #define REX_ARCH_ARM64 1
 #define REX_ARCH_AMD64 0
+#elif defined(__x86_64__) || defined(_M_X64)
+#define REX_ARCH_ARM64 0
+#define REX_ARCH_AMD64 1
+#else
+#define REX_ARCH_ARM64 0
+#define REX_ARCH_AMD64 0
+#endif
 #define REX_ARCH_PPC 0
 
 // Compiler definition: Clang / LLVM (Android NDK)

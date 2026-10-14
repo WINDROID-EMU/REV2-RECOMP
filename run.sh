@@ -58,14 +58,20 @@ fi
 export LD_LIBRARY_PATH="${BUILD_DIR}:${RUNTIME_DIR}:${LD_LIBRARY_PATH}"
 export DISPLAY="${DISPLAY:-:0}"
 
-mkdir -p "${SCRIPT_DIR}/cache" "${SCRIPT_DIR}/user_data"
+mkdir -p "${SCRIPT_DIR}/cache/shaders/shareable" "${SCRIPT_DIR}/user_data"
+
+# Garante que os shaders pré-compilados do jogo estejam no cache do desktop
+if [[ -d "${SCRIPT_DIR}/android/app/src/main/assets/shaders/shareable" ]]; then
+    cp -u "${SCRIPT_DIR}/android/app/src/main/assets/shaders/shareable"/5841144C* "${SCRIPT_DIR}/cache/shaders/shareable/" 2>/dev/null || true
+fi
 
 echo "Iniciando Resident Evil: Revelations 2 (REV2-RECOMP)..."
 echo "  Binário:    ${EXECUTABLE}"
 echo "  Game Root:  ${GAME_DATA_ROOT}"
 echo "  Cache:      ${SCRIPT_DIR}/cache"
 echo "  User Data:  ${SCRIPT_DIR}/user_data"
-echo "  GPU Plugin: xenos"
+echo "  GPU Plugin: xenos (Vulkan)"
+echo "  Otimizações: async_skip=true, readback=none, cache=1024MB"
 
 ARGS=(--game_data_root "${GAME_DATA_ROOT}")
 if [[ "$*" != *"--gpu_plugin"* ]]; then
@@ -76,6 +82,24 @@ if [[ "$*" != *"--cache_root"* ]]; then
 fi
 if [[ "$*" != *"--user_data_root"* ]]; then
     ARGS+=(--user_data_root "${SCRIPT_DIR}/user_data")
+fi
+if [[ "$*" != *"--readback_resolve"* ]]; then
+    ARGS+=(--readback_resolve "none")
+fi
+if [[ "$*" != *"--vulkan_async_skip_incomplete_frames"* ]]; then
+    ARGS+=(--vulkan_async_skip_incomplete_frames "true")
+fi
+if [[ "$*" != *"--async_shader_compilation"* ]]; then
+    ARGS+=(--async_shader_compilation "true")
+fi
+if [[ "$*" != *"--log_level"* ]]; then
+    ARGS+=(--log_level "warning")
+fi
+if [[ "$*" != *"--log_noisy"* ]]; then
+    ARGS+=(--log_noisy "false")
+fi
+if [[ "$*" != *"--log_verbose"* ]]; then
+    ARGS+=(--log_verbose "false")
 fi
 
 exec "${EXECUTABLE}" "${ARGS[@]}" "$@"

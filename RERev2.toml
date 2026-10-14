@@ -1,0 +1,48 @@
+# ==============================================================================
+# Resident Evil: Revelations 2 - Configuração de Alta Performance (Linux x86_64)
+# Otimizado para NVIDIA GeForce GTX 1050 Ti / AMD Ryzen
+# ==============================================================================
+
+# Caminhos de Dados e Cache
+game_data_root = "/media/amd/SSD KING/X360/revelatin 2/extracted"
+user_data_root = "/media/amd/SSD KING/X360/revelatin 2/recomp_project/user_data"
+cache_root = "/media/amd/SSD KING/X360/revelatin 2/recomp_project/cache"
+
+# --- Plugin Gráfico & Vulkan Backend ---
+gpu_plugin = "xenos"
+gpu_backend = "vulkan"
+render_target_path_vulkan = "fbo"
+
+# --- Eliminação de Micro-travamentos (Shaders & Pipelines) ---
+vulkan_async_skip_incomplete_frames = true
+async_shader_compilation = true
+vulkan_pipeline_creation_threads = 6
+vulkan_dynamic_rendering = false
+
+# --- Remoção de Efeitos Pesados de Pós-processamento ---
+readback_resolve = "none"
+mrt_edram_used_range_clamp_to_min = true
+native_2x_msaa = false
+
+# --- Texturas e VRAM (Otimizado para os 4GB da GTX 1050 Ti) ---
+texture_cache_memory_limit_soft = 1024
+texture_cache_memory_limit_hard = 2048
+gpu_3d_to_2d_texture = true
+
+# --- Vídeo e Resolução ---
+resolution = "720p"
+resolution_scale = 1
+vsync = true
+fullscreen = false
+present_effect = "bilinear"
+anisotropic_override = 2
+
+# --- Otimizações de CPU e Sistema ---
+protect_zero = false
+direct_host_resolve = true
+clear_memory_page_state = false
+
+# --- Logs Silenciosos (Elimina Gargalo de I/O em tempo de execução) ---
+log_level = "warning"
+log_noisy = false
+log_verbose = false
