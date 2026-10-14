@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.capcom.rerev2">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.vulkan.version" android:version="0x401000" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -17,7 +16,6 @@
         android:hasCode="true"
         android:theme="@style/Theme.RERev2.Title"
         android:requestLegacyExternalStorage="true"
-        android:extractNativeLibs="true"
         android:largeHeap="true">
 
         <!-- Tela de Título Fullscreen Adaptável -->

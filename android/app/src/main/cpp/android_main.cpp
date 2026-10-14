@@ -369,41 +369,39 @@ void android_main(struct android_app* state) {
   SetDefaultFlag("render_target_path_vulkan", "fbo");
   SetDefaultFlag("readback_resolve", "none");
   SetDefaultFlag("async_shader_compilation", "true");
-  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "false");
+  SetDefaultFlag("vulkan_async_skip_incomplete_frames", "true");
   SetDefaultFlag("vulkan_submit_on_primary_buffer_end", "false");
-  SetDefaultFlag("vulkan_dynamic_rendering", "true");
+  SetDefaultFlag("vulkan_dynamic_rendering", "false");
   SetDefaultFlag("native_2x_msaa", "false");
   SetDefaultFlag("gamma_render_target_as_unorm16", "false");
   SetDefaultFlag("depth_transfer_not_equal_test", "false");
   SetDefaultFlag("clear_memory_page_state", "false");
-  // Mobile devices have less unified memory bandwidth than desktop GPUs.
-  // Android limits are kept below desktop defaults (24/384 MB), not above them.
-  SetDefaultFlag("texture_cache_memory_limit_render_to_texture", "16");
-  SetDefaultFlag("texture_cache_memory_limit_soft", "256");
-  SetDefaultFlag("vulkan_pipeline_creation_threads", "2");
+  // Mobile devices: keep texture cache balanced to prevent texture thrashing and OOM
+  SetDefaultFlag("texture_cache_memory_limit_render_to_texture", "24");
+  SetDefaultFlag("texture_cache_memory_limit_soft", "512");
+  SetDefaultFlag("vulkan_pipeline_creation_threads", "4");
   SetDefaultFlag("store_shaders", "true");
   SetDefaultFlag("vsync", "true");
   SetDefaultFlag("mnk_mode", "false");
   SetDefaultFlag("present_letterbox", "false");
 
-  // 854x480 (480p 16:9 widescreen) presentation resolution for mobile efficiency.
-  // Hardware Composer performs zero-overhead hardware scaling on the display controller.
-  SetDefaultFlag("video_mode_width", "854");
-  SetDefaultFlag("video_mode_height", "480");
-  SetDefaultFlag("resolution", "480p");
+  // 1280x720 Native Xbox 360 resolution for Resident Evil Revelations 2
+  SetDefaultFlag("video_mode_width", "1280");
+  SetDefaultFlag("video_mode_height", "720");
+  SetDefaultFlag("resolution", "720p");
   SetDefaultFlag("resolution_scale", "1");
-  SetDefaultFlag("anisotropic_override", "1");
+  SetDefaultFlag("anisotropic_override", "2");
 
   // MRT & Render Target Optimization: clamp used eDRAM range to active render targets
   SetDefaultFlag("mrt_edram_used_range_clamp_to_min", "true");
 
-  // Adreno performance & logging optimizations
+  // Performance & logging optimizations
   SetDefaultFlag("query_occlusion_fake_sample_count", "1");
   SetDefaultFlag("primitive_processor_cache_min_indices", "-1");
   SetDefaultFlag("vulkan_validation_enabled", "false");
   SetDefaultFlag("vulkan_log_debug_messages", "false");
   SetDefaultFlag("gpu_allow_invalid_fetch_constants", "true");
-  SetDefaultFlag("log_level", "info");
+  SetDefaultFlag("log_level", "warning");
   SetDefaultFlag("log_file", "");
   SetDefaultFlag("log_noisy", "false");
   SetDefaultFlag("log_verbose", "false");

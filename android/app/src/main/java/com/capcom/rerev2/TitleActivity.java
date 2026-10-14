@@ -909,8 +909,8 @@ public class TitleActivity extends Activity {
         setupSpinner(spLogLevel, logLabels);
 
         // Load saved values
-        String curRes = prefs.getString(KEY_RESOLUTION, "480p");
-        spResolution.setSelection(findStringIndex(resValues, curRes, 2));
+        String curRes = prefs.getString(KEY_RESOLUTION, "720p");
+        spResolution.setSelection(findStringIndex(resValues, curRes, 0));
 
         int curScale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
         spResolutionScale.setSelection(findIntIndex(scaleValues, curScale, 0));
@@ -921,25 +921,25 @@ public class TitleActivity extends Activity {
         String curEdram = prefs.getString(KEY_EDRAM_PATH, "rtv");
         spEdramPath.setSelection(findStringIndex(edramValues, curEdram, 0));
 
-        int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
-        spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 1));
+        int curThreads = prefs.getInt(KEY_PIPELINE_THREADS, 4);
+        spPipelineThreads.setSelection(findIntIndex(threadValues, curThreads, 2));
 
-        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 256);
-        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 0));
+        int curCache = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
+        spTextureCacheLimit.setSelection(findIntIndex(cacheValues, curCache, 2));
 
-        int curAniso = prefs.getInt(KEY_ANISOTROPIC, 1);
-        spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 1));
+        int curAniso = prefs.getInt(KEY_ANISOTROPIC, 2);
+        spAnisotropic.setSelection(findIntIndex(anisoValues, curAniso, 2));
 
         String curAa = prefs.getString(KEY_ANTIALIASING, "none");
         spAntialiasing.setSelection(findStringIndex(aaValues, curAa, 0));
 
-        String curLog = prefs.getString(KEY_LOG_LEVEL, "info");
-        spLogLevel.setSelection(findStringIndex(logValues, curLog, 2));
+        String curLog = prefs.getString(KEY_LOG_LEVEL, "warning");
+        spLogLevel.setSelection(findStringIndex(logValues, curLog, 1));
 
         cbVsync.setChecked(prefs.getBoolean(KEY_VSYNC, true));
         cbStretchScreen.setChecked(prefs.getBoolean(KEY_STRETCH_SCREEN, true));
         cbAsyncShaders.setChecked(prefs.getBoolean(KEY_ASYNC_SHADERS, true));
-        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, false));
+        cbAsyncSkip.setChecked(prefs.getBoolean(KEY_ASYNC_SKIP, true));
         cbGpu3dTo2d.setChecked(prefs.getBoolean(KEY_GPU_3D_TO_2D, true));
         cbReadbackResolve.setChecked(prefs.getBoolean(KEY_READBACK_RESOLVE, false));
         cbNativeMsaa.setChecked(prefs.getBoolean(KEY_NATIVE_MSAA, false));
@@ -999,19 +999,19 @@ public class TitleActivity extends Activity {
         Button btnReset = dialogView.findViewById(R.id.btn_reset_defaults);
         if (btnReset != null) {
             btnReset.setOnClickListener(v -> {
-                spResolution.setSelection(2); // 480p (Lightest / Mobile Performance)
+                spResolution.setSelection(0); // 720p (Native Xbox 360)
                 spResolutionScale.setSelection(0); // 1x
                 spGpuPlugin.setSelection(0); // xenos
                 spEdramPath.setSelection(0); // rtv
-                spPipelineThreads.setSelection(1); // 2 threads
-                spTextureCacheLimit.setSelection(0); // 256 MB
-                spAnisotropic.setSelection(1); // 1x
+                spPipelineThreads.setSelection(2); // 4 threads
+                spTextureCacheLimit.setSelection(2); // 512 MB (Recommended)
+                spAnisotropic.setSelection(2); // 2x (Recommended)
                 spAntialiasing.setSelection(0); // none
-                spLogLevel.setSelection(2); // info
+                spLogLevel.setSelection(1); // warning
                 cbVsync.setChecked(true);
                 cbStretchScreen.setChecked(true);
                 cbAsyncShaders.setChecked(true);
-                cbAsyncSkip.setChecked(false);
+                cbAsyncSkip.setChecked(true);
                 cbGpu3dTo2d.setChecked(true);
                 cbReadbackResolve.setChecked(false);
                 cbNativeMsaa.setChecked(false);
@@ -1023,7 +1023,7 @@ public class TitleActivity extends Activity {
                 cbGrantPrivileges.setChecked(false);
                 sbGameSpeed.setProgress(100);
                 etGamertag.setText("Player");
-                Toast.makeText(TitleActivity.this, "Padrões móveis 480p restaurados.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TitleActivity.this, "Padrões recomendados 720p restaurados.", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -1100,19 +1100,19 @@ public class TitleActivity extends Activity {
         try {
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-            String res = prefs.getString(KEY_RESOLUTION, "480p");
+            String res = prefs.getString(KEY_RESOLUTION, "720p");
             int scale = prefs.getInt(KEY_RESOLUTION_SCALE, 1);
             String plugin = prefs.getString(KEY_GPU_PLUGIN, "xenos");
             boolean vsync = prefs.getBoolean(KEY_VSYNC, true);
             boolean stretchScreen = prefs.getBoolean(KEY_STRETCH_SCREEN, true);
             String edram = prefs.getString(KEY_EDRAM_PATH, "rtv");
             boolean asyncShaders = prefs.getBoolean(KEY_ASYNC_SHADERS, true);
-            boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, false);
-            int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 2);
-            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 256);
+            boolean asyncSkip = prefs.getBoolean(KEY_ASYNC_SKIP, true);
+            int pipelineThreads = prefs.getInt(KEY_PIPELINE_THREADS, 4);
+            int textureCacheLimit = prefs.getInt(KEY_TEXTURE_CACHE_LIMIT, 512);
             boolean gpu3dTo2d = prefs.getBoolean(KEY_GPU_3D_TO_2D, true);
             boolean readback = prefs.getBoolean(KEY_READBACK_RESOLVE, false);
-            int aniso = prefs.getInt(KEY_ANISOTROPIC, 1);
+            int aniso = prefs.getInt(KEY_ANISOTROPIC, 2);
             String aa = prefs.getString(KEY_ANTIALIASING, "none");
             boolean nativeMsaa = prefs.getBoolean(KEY_NATIVE_MSAA, false);
             boolean mute = prefs.getBoolean(KEY_AUDIO_MUTE, false);
@@ -1120,13 +1120,13 @@ public class TitleActivity extends Activity {
             boolean directResolve = prefs.getBoolean(KEY_DIRECT_HOST_RESOLVE, true);
             boolean grant = prefs.getBoolean(KEY_GRANT_PRIVILEGES, false);
             String gamertag = prefs.getString(KEY_GAMERTAG, "Player");
-            String logLevel = prefs.getString(KEY_LOG_LEVEL, "info");
+            String logLevel = prefs.getString(KEY_LOG_LEVEL, "warning");
             int speed = prefs.getInt(KEY_GAME_SPEED, 100);
 
-            int width = 854;
-            int height = 480;
-            if ("720p".equalsIgnoreCase(res)) {
-                width = 1280; height = 720;
+            int width = 1280;
+            int height = 720;
+            if ("480p".equalsIgnoreCase(res)) {
+                width = 854; height = 480;
             } else if ("540p".equalsIgnoreCase(res)) {
                 width = 960; height = 540;
             } else if ("1080p".equalsIgnoreCase(res)) {
@@ -1143,7 +1143,7 @@ public class TitleActivity extends Activity {
             toml.append("render_target_path_vulkan = ").append((char) 34).append(vulkanEdram).append((char) 34).append((char) 10);
             toml.append("vulkan_async_skip_incomplete_frames = ").append(asyncSkip ? "true" : "false").append((char) 10);
             toml.append("vulkan_submit_on_primary_buffer_end = false").append((char) 10);
-            toml.append("vulkan_dynamic_rendering = true").append((char) 10);
+            toml.append("vulkan_dynamic_rendering = false").append((char) 10);
             toml.append("gpu_backend = ").append((char) 34).append("vulkan").append((char) 34).append((char) 10);
             toml.append("gpu_plugin = ").append((char) 34).append(plugin).append((char) 34).append((char) 10);
             toml.append("gpu = ").append((char) 34).append(plugin).append((char) 34).append((char) 10).append((char) 10);
@@ -1216,12 +1216,9 @@ public class TitleActivity extends Activity {
     }
 
     private void extractBundledShaders(File extDir) {
-        if (extDir != null) {
-            extractBundledShadersToDir(extDir);
-        }
-        File intDir = getFilesDir();
-        if (intDir != null && !intDir.equals(extDir)) {
-            extractBundledShadersToDir(intDir);
+        File targetDir = (extDir != null) ? extDir : getFilesDir();
+        if (targetDir != null) {
+            extractBundledShadersToDir(targetDir);
         }
     }
 
@@ -1290,6 +1287,9 @@ public class TitleActivity extends Activity {
                     needsExtract = true;
                 }
                 if (fileName.contains("prebaked") && target.exists() && target.length() < 1024 * 1024) {
+                    needsExtract = true;
+                }
+                if (fileName.endsWith(".vkcache") && target.exists() && target.length() < 1024 * 1024) {
                     needsExtract = true;
                 }
                 if (!needsExtract) {

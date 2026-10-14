@@ -22,7 +22,7 @@ import android.widget.FrameLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import com.windroid.emu.views.VirtualControllerInputView;
+import com.capcom.rerev2.views.VirtualControllerInputView;
 
 public class GameActivity extends NativeActivity {
 
@@ -65,16 +65,16 @@ public class GameActivity extends NativeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(TAG, "GameActivity onCreate with Windroid-emu virtual controls");
+        Log.i(TAG, "GameActivity onCreate with on-screen virtual controls");
 
         configureFullscreen();
 
-        // Create VirtualControllerInputView from Windroid-emu
+        // Create VirtualControllerInputView
         controlsView = new VirtualControllerInputView(this);
         controlsView.setBackgroundColor(Color.TRANSPARENT);
         controlsView.setAlpha(0.85F);
 
-        // Map Windroid-emu virtual controller state to native XInput gamepad
+        // Map virtual controller state to native XInput gamepad
         controlsView.setControllerListener((lx, ly, rx, ry, lt, rt, buttonsA, buttonsB, dpadStatus) -> {
             int xinputButtons = 0;
 
@@ -343,7 +343,7 @@ public class GameActivity extends NativeActivity {
 
         if (controlsPopup != null && !controlsPopup.isShowing()) {
             try {
-                Log.i(TAG, "Displaying Windroid-emu VirtualControllerInputView overlay (" + width + "x" + height + ")");
+                Log.i(TAG, "Displaying VirtualControllerInputView overlay (" + width + "x" + height + ")");
                 controlsPopup.setWidth(width);
                 controlsPopup.setHeight(height);
                 controlsPopup.showAtLocation(decorView, Gravity.TOP | Gravity.START, 0, 0);
@@ -367,7 +367,7 @@ public class GameActivity extends NativeActivity {
                 controlsPopup.setIsClippedToScreen(false);
             }
             try {
-                Log.i(TAG, "Displaying Windroid-emu VirtualControllerInputView overlay (" + width + "x" + height + ")");
+                Log.i(TAG, "Displaying VirtualControllerInputView overlay (" + width + "x" + height + ")");
                 controlsPopup.showAtLocation(decorView, Gravity.TOP | Gravity.START, 0, 0);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to show controls PopupWindow", e);

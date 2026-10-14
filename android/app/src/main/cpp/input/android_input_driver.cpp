@@ -6,8 +6,8 @@
 #include <cmath>
 #include <algorithm>
 
-// Shared engine FPS value written by the VdSwap hook in rex_app.cpp.
-// Declared extern here; defined there. Zero-initialised at start-up.
+// Shared engine FPS calculation defined in rex_app.cpp.
+extern float rex_update_and_get_engine_fps();
 extern std::atomic<float> g_rerev2_engine_fps;
 
 #define TAG "RERev2-AndroidInput"
@@ -75,7 +75,7 @@ Java_com_capcom_rerev2_GameActivity_nativeSetVirtualGamepad(
 extern "C" JNIEXPORT jfloat JNICALL
 Java_com_capcom_rerev2_GameActivity_nativeGetEngineFps(
     JNIEnv* env, jclass clazz) {
-  return static_cast<jfloat>(g_rerev2_engine_fps.load(std::memory_order_relaxed));
+  return static_cast<jfloat>(rex_update_and_get_engine_fps());
 }
 
 void RegisterVirtualGamepadJNI(void* java_vm, void* activity_obj) {

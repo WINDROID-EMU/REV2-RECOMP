@@ -535,8 +535,60 @@ static void InitBionicPthreadFix() {
 // Defined here, declared extern in android_input_driver.cpp.
 std::atomic<float>  g_rerev2_engine_fps{0.0f};
 
-// Private frame-swap counter; read by the FrameStats lambda below.
+// Private frame-swap counter; read by rex_update_and_get_engine_fps().
 static std::atomic<uint64_t> g_rerev2_swap_count{0};
+
+// Computes smoothed engine FPS directly from game VdSwap present counts.
+// Called periodically by GameActivity.nativeGetEngineFps() and by SetGuestFrameStats.
+float rex_update_and_get_engine_fps() {
+  using Clk = std::chrono::steady_clock;
+  struct State {
+    Clk::time_point last_time{};
+    uint64_t        last_count = 0;
+    double          smooth_ms  = 0.0;
+    float           fps        = 0.0f;
+    bool            valid      = false;
+  };
+  static State s;
+  static std::mutex s_mutex;
+
+  std::lock_guard<std::mutex> lock(s_mutex);
+
+  const auto     now   = Clk::now();
+  const uint64_t total = g_rerev2_swap_count.load(std::memory_order_relaxed);
+
+  if (!s.valid) {
+    s.valid      = true;
+    s.last_time  = now;
+    s.last_count = total;
+    return s.fps;
+  }
+
+  const double dt_ms =
+      std::chrono::duration<double, std::milli>(now - s.last_time).count();
+  if (dt_ms < 400.0) {
+    return s.fps;
+  }
+
+  const uint64_t done = total - s.last_count;
+  s.last_time  = now;
+  s.last_count = total;
+
+  if (done == 0) {
+    s.smooth_ms = 0.0;
+    s.fps       = 0.0f;
+    g_rerev2_engine_fps.store(0.0f, std::memory_order_relaxed);
+    return 0.0f;
+  }
+
+  const double ms_per = dt_ms / static_cast<double>(done);
+  s.smooth_ms = (s.smooth_ms <= 0.0 || dt_ms > 5000.0)
+                ? ms_per
+                : (s.smooth_ms + ms_per) * 0.5;
+  s.fps = static_cast<float>(1000.0 / s.smooth_ms);
+  g_rerev2_engine_fps.store(s.fps, std::memory_order_relaxed);
+  return s.fps;
+}
 
 // Forward declaration from the generated code.
 REX_EXTERN(__imp__VdSwap);
@@ -1184,55 +1236,13 @@ void ReXApp::LaunchModule() {
     //  real game frame rate (from VdSwap counts), not display hz.
     // ----------------------------------------------------------------
     SetGuestFrameStats([this]() -> ui::FrameStats {
-      using Clk = std::chrono::steady_clock;
-      struct State {
-        Clk::time_point last_time{};
-        uint64_t        last_count = 0;
-        double          smooth_ms  = 0.0;
-        bool            valid      = false;
-        ui::FrameStats  result{};
-      };
-      static State s;
-
-      const auto   now   = Clk::now();
+      ui::FrameStats result{};
       const uint64_t total = g_rerev2_swap_count.load(std::memory_order_relaxed);
-
-      s.result.frame_count = total > 0 ? total : 1;
-
-      if (!s.valid) {
-        s.valid      = true;
-        s.last_time  = now;
-        s.last_count = total;
-        return s.result;
-      }
-
-      const double dt_ms =
-          std::chrono::duration<double, std::milli>(now - s.last_time).count();
-      if (dt_ms < 900.0) {
-        return s.result;   // wait for ~1 s window
-      }
-
-      const uint64_t done = total - s.last_count;
-      s.last_time  = now;
-      s.last_count = total;
-
-      if (done == 0) {
-        s.smooth_ms = 0.0;
-        s.result.fps           = 0.0;
-        s.result.frame_time_ms = dt_ms;
-        g_rerev2_engine_fps.store(0.0f, std::memory_order_relaxed);
-        return s.result;
-      }
-
-      const double ms_per = dt_ms / static_cast<double>(done);
-      s.smooth_ms = (s.smooth_ms <= 0.0 || dt_ms > 5000.0)
-                    ? ms_per
-                    : (s.smooth_ms + ms_per) * 0.5;
-      s.result.frame_time_ms = s.smooth_ms;
-      s.result.fps           = 1000.0 / s.smooth_ms;
-      g_rerev2_engine_fps.store(static_cast<float>(s.result.fps),
-                                std::memory_order_relaxed);
-      return s.result;
+      result.frame_count = total > 0 ? total : 1;
+      const float fps = rex_update_and_get_engine_fps();
+      result.fps = fps;
+      result.frame_time_ms = (fps > 0.0f) ? (1000.0 / fps) : 0.0;
+      return result;
     });
 
 

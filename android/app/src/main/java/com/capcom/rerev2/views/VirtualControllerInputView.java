@@ -1,4 +1,4 @@
-package com.windroid.emu.views;
+package com.capcom.rerev2.views;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -15,8 +15,8 @@ import android.view.View;
 import java.util.ArrayList;
 
 /**
- * Virtual Controller from Windroid-emu adapted for Resident Evil: Revelations 2 Recompiled.
- * Matches Windroid-emu layout, aesthetics, touch physics and button behaviors.
+ * Virtual Controller adapted for Resident Evil: Revelations 2 Recompiled.
+ * Provides on-screen XInput controls, touch physics and button behaviors.
  */
 public class VirtualControllerInputView extends View {
 
@@ -154,7 +154,7 @@ public class VirtualControllerInputView extends View {
 
     private void loadSavedLayout() {
         try {
-            SharedPreferences prefs = getContext().getSharedPreferences("virtual_controller_windroid", Context.MODE_PRIVATE);
+            SharedPreferences prefs = getContext().getSharedPreferences("virtual_controller_rerev2", Context.MODE_PRIVATE);
             if (prefs != null && prefs.contains("VC_BUTTON_" + A_BUTTON + "_X")) {
                 buttonList.forEach((i) -> {
                     i.x = prefs.getFloat("VC_BUTTON_" + i.id + "_X", i.x);
