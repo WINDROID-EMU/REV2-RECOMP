@@ -32,6 +32,7 @@
 
 namespace rex {
 
+struct LogConfig;
 class LogCaptureSink;
 
 /// Content path configuration, passed to OnConfigurePaths().
@@ -113,6 +114,9 @@ class ReXApp : public ui::WindowedApp, public ui::WindowListener, public ui::Win
   /// Called after path defaults are computed, before Runtime is constructed.
   /// Override to adjust game/user/update data paths programmatically.
   virtual void OnConfigurePaths(PathConfig& paths) { (void)paths; }
+
+  /// Called before InitLogging. Override to customize logging sinks, levels, etc.
+  virtual void OnConfigureLogging(LogConfig& config) { (void)config; }
 
   /// Called after SetupPresentation returns (window and ImGui drawer are live)
   /// and before Runtime construction. Override to resolve paths from user
