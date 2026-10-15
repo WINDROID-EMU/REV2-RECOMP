@@ -315789,7 +315789,7 @@ loc_834DBE6C:
 	return;
 }
 
-DEFINE_REX_FUNC(sub_834E2B50) {
+DEFINE_REX_FUNC(sub_834E2B50) { REV2_TRACE(0x834E2B50);
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
 	uint32_t ea{};

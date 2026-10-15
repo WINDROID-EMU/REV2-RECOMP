@@ -61,7 +61,7 @@ add_library(spdlog::spdlog STATIC IMPORTED)
 set_target_properties(spdlog::spdlog PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "Threads::Threads;fmt::fmt;log"
+  INTERFACE_LINK_LIBRARIES "Threads::Threads;fmt::fmt"
 )
 
 # Create imported target spdlog::spdlog_header_only
@@ -70,7 +70,7 @@ add_library(spdlog::spdlog_header_only INTERFACE IMPORTED)
 set_target_properties(spdlog::spdlog_header_only PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "SPDLOG_FMT_EXTERNAL"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "Threads::Threads;fmt::fmt;log"
+  INTERFACE_LINK_LIBRARIES "Threads::Threads;fmt::fmt"
 )
 
 # Load information for each installed configuration.

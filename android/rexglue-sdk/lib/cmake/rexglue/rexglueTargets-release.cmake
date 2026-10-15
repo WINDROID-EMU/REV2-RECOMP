@@ -7,24 +7,41 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 
 # Import target "rex::runtime" for configuration "Release"
 set_property(TARGET rex::runtime APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
-set_target_properties(rex::runtime PROPERTIES
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/librexruntime.so"
-  IMPORTED_SONAME_RELEASE "librexruntime.so"
+if(NOT ANDROID)
+  set_target_properties(rex::runtime PROPERTIES
+    IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/../../runtime/linux-amd64/librexruntime.so"
+    IMPORTED_SONAME_RELEASE "librexruntime.so"
   )
-
-list(APPEND _cmake_import_check_targets rex::runtime )
-list(APPEND _cmake_import_check_files_for_rex::runtime "${_IMPORT_PREFIX}/lib/librexruntime.so" )
+  list(APPEND _cmake_import_check_targets rex::runtime )
+  list(APPEND _cmake_import_check_files_for_rex::runtime "${_IMPORT_PREFIX}/../../runtime/linux-amd64/librexruntime.so" )
+else()
+  set_target_properties(rex::runtime PROPERTIES
+    IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/librexruntime.so"
+    IMPORTED_SONAME_RELEASE "librexruntime.so"
+  )
+  list(APPEND _cmake_import_check_targets rex::runtime )
+  list(APPEND _cmake_import_check_files_for_rex::runtime "${_IMPORT_PREFIX}/lib/librexruntime.so" )
+endif()
 
 # Import target "rex::gpu-xenos" for configuration "Release"
 set_property(TARGET rex::gpu-xenos APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
-set_target_properties(rex::gpu-xenos PROPERTIES
-  IMPORTED_LINK_DEPENDENT_LIBRARIES_RELEASE "rex::runtime"
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/librexgpu-xenos.so"
-  IMPORTED_SONAME_RELEASE "librexgpu-xenos.so"
+if(NOT ANDROID)
+  set_target_properties(rex::gpu-xenos PROPERTIES
+    IMPORTED_LINK_DEPENDENT_LIBRARIES_RELEASE "rex::runtime"
+    IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/../../runtime/linux-amd64/librexgpu-xenos.so"
+    IMPORTED_SONAME_RELEASE "librexgpu-xenos.so"
   )
-
-list(APPEND _cmake_import_check_targets rex::gpu-xenos )
-list(APPEND _cmake_import_check_files_for_rex::gpu-xenos "${_IMPORT_PREFIX}/lib/librexgpu-xenos.so" )
+  list(APPEND _cmake_import_check_targets rex::gpu-xenos )
+  list(APPEND _cmake_import_check_files_for_rex::gpu-xenos "${_IMPORT_PREFIX}/../../runtime/linux-amd64/librexgpu-xenos.so" )
+else()
+  set_target_properties(rex::gpu-xenos PROPERTIES
+    IMPORTED_LINK_DEPENDENT_LIBRARIES_RELEASE "rex::runtime"
+    IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/librexgpu-xenos.so"
+    IMPORTED_SONAME_RELEASE "librexgpu-xenos.so"
+  )
+  list(APPEND _cmake_import_check_targets rex::gpu-xenos )
+  list(APPEND _cmake_import_check_files_for_rex::gpu-xenos "${_IMPORT_PREFIX}/lib/librexgpu-xenos.so" )
+endif()
 
 # Import target "rex::gpu-plume" for configuration "Release"
 set_property(TARGET rex::gpu-plume APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)

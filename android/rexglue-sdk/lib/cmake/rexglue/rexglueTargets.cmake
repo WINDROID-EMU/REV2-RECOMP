@@ -59,9 +59,9 @@ endif()
 add_library(rex::runtime SHARED IMPORTED)
 
 set_target_properties(rex::runtime PROPERTIES
-  INTERFACE_COMPILE_DEFINITIONS "\$<\$<NOT:\$<CONFIG:Release>>:REXGLUE_ENABLE_PERF_COUNTERS>;REX_HAS_VULKAN=1"
+  INTERFACE_COMPILE_DEFINITIONS "$<$<NOT:$<CONFIG:Release>>:REXGLUE_ENABLE_PERF_COUNTERS>;REX_HAS_VULKAN=1;SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "rex::simde;fmt::fmt;spdlog::spdlog;rex::tomlplusplus;android;Vulkan::Headers;GPUOpen::VulkanMemoryAllocator;rex::spirv-tools-headers"
+  INTERFACE_LINK_LIBRARIES "rex::simde;$<$<PLATFORM_ID:Android>:fmt::fmt;spdlog::spdlog>;rex::tomlplusplus;Vulkan::Headers;GPUOpen::VulkanMemoryAllocator;rex::spirv-tools-headers"
 )
 
 # Create imported target rex::gpu-xenos
@@ -154,7 +154,7 @@ add_library(rex::SPIRV STATIC IMPORTED)
 
 set_target_properties(rex::SPIRV PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:rex::MachineIndependent>"
+  INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:rex::MachineIndependent>"
 )
 
 # Create imported target rex::glslang
@@ -162,14 +162,14 @@ add_library(rex::glslang STATIC IMPORTED)
 
 set_target_properties(rex::glslang PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:rex::OGLCompiler>;\$<LINK_ONLY:rex::OSDependent>;\$<LINK_ONLY:rex::MachineIndependent>"
+  INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:rex::OGLCompiler>;$<LINK_ONLY:rex::OSDependent>;$<LINK_ONLY:rex::MachineIndependent>"
 )
 
 # Create imported target rex::MachineIndependent
 add_library(rex::MachineIndependent STATIC IMPORTED)
 
 set_target_properties(rex::MachineIndependent PROPERTIES
-  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:rex::OGLCompiler>;\$<LINK_ONLY:rex::OSDependent>;\$<LINK_ONLY:rex::GenericCodeGen>"
+  INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:rex::OGLCompiler>;$<LINK_ONLY:rex::OSDependent>;$<LINK_ONLY:rex::GenericCodeGen>"
 )
 
 # Create imported target rex::GenericCodeGen

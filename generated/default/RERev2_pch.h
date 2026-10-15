@@ -45,6 +45,12 @@ extern const rex::PPCImageInfo PPCImageConfig;
 extern PPCFuncMapping PPCFuncMappings[];
 
 //=============================================================================
+// D3D Tracing
+//=============================================================================
+extern "C" void Rev2TraceHit(uint32_t addr);
+#define REV2_TRACE(addr) Rev2TraceHit(addr)
+
+//=============================================================================
 // Function Definition Macros
 //=============================================================================
 

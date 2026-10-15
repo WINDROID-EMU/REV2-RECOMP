@@ -15,9 +15,14 @@
 
 #include <rex/types.h>
 
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>
+#endif
+
 namespace rex::platform {
 
 struct FPSCRPlatform {
+#if defined(__aarch64__)
   // RMode
   static constexpr size_t RoundShift = 22;
   static constexpr size_t RoundMaskVal = 3 << RoundShift;
@@ -45,6 +50,34 @@ struct FPSCRPlatform {
   static inline void InitHostExceptions(u32& csr) noexcept {
     csr &= ~ExceptionMask;  // Clear enable bits to disable exceptions
   }
+#else
+  // x86_64 MXCSR
+  static constexpr size_t RoundShift = 13;
+  static constexpr size_t RoundMaskVal = 3 << RoundShift;
+  // FTZ (bit 15) and DAZ (bit 6)
+  static constexpr size_t FlushMask = (1 << 15) | (1 << 6);
+  static constexpr size_t GuestToHost[] = {0 << RoundShift, 3 << RoundShift, 2 << RoundShift,
+                                           1 << RoundShift};
+  static constexpr u32 ExceptionMask = (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12);
+
+  static inline u32 getcsr() noexcept {
+#if defined(__x86_64__) || defined(_M_X64)
+    return _mm_getcsr();
+#else
+    return 0;
+#endif
+  }
+
+  static inline void setcsr(u32 csr) noexcept {
+#if defined(__x86_64__) || defined(_M_X64)
+    _mm_setcsr(csr);
+#endif
+  }
+
+  static inline void InitHostExceptions(u32& csr) noexcept {
+    csr |= ExceptionMask;
+  }
+#endif
 };
 
 }  // namespace rex::platform

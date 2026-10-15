@@ -335162,7 +335162,7 @@ loc_834DB8EC:
 	return;
 }
 
-DEFINE_REX_FUNC(sub_834E1810) {
+DEFINE_REX_FUNC(sub_834E1810) { REV2_TRACE(0x834E1810);
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
 	uint32_t ea{};
@@ -336670,7 +336670,7 @@ loc_834E2040:
 	return;
 }
 
-DEFINE_REX_FUNC(sub_834F7030) {
+DEFINE_REX_FUNC(sub_834F7030) { REV2_TRACE(0x834F7030);
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
 	uint32_t ea{};
@@ -339228,7 +339228,7 @@ loc_834F8178:
 	return;
 }
 
-DEFINE_REX_FUNC(sub_83517508) {
+DEFINE_REX_FUNC(sub_83517508) { REV2_TRACE(0x83517508);
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
 	// mflr r12
@@ -339564,7 +339564,7 @@ loc_83517750:
 	return;
 }
 
-DEFINE_REX_FUNC(sub_8351C238) {
+DEFINE_REX_FUNC(sub_8351C238) { REV2_TRACE(0x8351C238);
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
 	uint32_t ea{};

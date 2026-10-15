@@ -14,7 +14,9 @@ include_guard(GLOBAL)
 # Applied to both host apps and guest DLL modules.
 #==========================================================
 function(rexglue_apply_target_settings target_name)
-    target_compile_options(${target_name} PRIVATE -march=armv8-a)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+        target_compile_options(${target_name} PRIVATE -march=armv8-a)
+    endif()
 endfunction()
 
 #==========================================================
@@ -29,9 +31,15 @@ endfunction()
 function(rexglue_configure_target target_name)
     cmake_parse_arguments(ARG "" "" "GPU_PLUGINS" ${ARGN})
 
-    target_sources(${target_name} PRIVATE
-        ${REXGLUE_SHARE_DIR}/windowed_app_main_android.cpp
-        ${REXGLUE_SHARE_DIR}/rex_app.cpp)
+    if(ANDROID)
+        target_sources(${target_name} PRIVATE
+            ${REXGLUE_SHARE_DIR}/windowed_app_main_android.cpp
+            ${REXGLUE_SHARE_DIR}/rex_app.cpp)
+    else()
+        target_sources(${target_name} PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/runtime/linux-amd64/objects/windowed_app_main_sdl.cpp.o"
+            "${CMAKE_CURRENT_SOURCE_DIR}/runtime/linux-amd64/objects/rex_app.cpp.o")
+    endif()
 
     target_compile_definitions(${target_name} PRIVATE
         REXGLUE_BUILD_CONFIG="$<CONFIG>")

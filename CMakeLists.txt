@@ -25,6 +25,9 @@ endif()
 # Sources
 set(REREV2_SOURCES
     src/main.cpp
+    src/rev2_hooks.cpp
+    src/rev2_trace.cpp
+    src/rev2_gpu/rev2_gpu.cpp
 )
 
 if(WIN32)
