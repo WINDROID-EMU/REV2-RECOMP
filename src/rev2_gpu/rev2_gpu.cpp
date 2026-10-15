@@ -25,10 +25,17 @@ void Initialize() {
     ps.native_path_enabled = true;
   }
 
+  const char* fallback_env = std::getenv("REV2_FALLBACK_XENOS");
+  if (fallback_env && std::strcmp(fallback_env, "1") == 0) {
+    ps.fallback_to_xenos = true;
+  } else {
+    ps.fallback_to_xenos = false;
+  }
+
   std::printf("\n=======================================================\n");
   std::printf("  [REV2_GPU] Camada D3D + Plume/Vulkan Inicializada\n");
   std::printf("  Status: %s\n", ps.native_path_enabled ? "ATIVA (Nativa D3D)" : "DESATIVADA (Modo Legado)");
-  std::printf("  Fallback Xenos: %s\n", ps.fallback_to_xenos ? "HABILITADO" : "DESABILITADO");
+  std::printf("  Fallback Xenos: %s\n", ps.fallback_to_xenos ? "HABILITADO" : "DESATIVADO (100%% Nativo Plume)");
   std::printf("  Texture Cache: ATIVO (D3D Texture Manager)\n");
   std::printf("  eDRAM Bypass: ATIVO (Direct Resolve)\n");
   std::printf("=======================================================\n\n");

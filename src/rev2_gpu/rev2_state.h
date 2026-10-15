@@ -163,7 +163,7 @@ class PipelineState {
 
   // Controle de modo
   bool native_path_enabled = true;
-  bool fallback_to_xenos = true;
+  bool fallback_to_xenos = false;
 
   void ResetFrameCounters() {
     stats.draw_indexed_calls = 0;
