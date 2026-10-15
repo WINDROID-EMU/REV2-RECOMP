@@ -58,6 +58,9 @@ fi
 export LD_LIBRARY_PATH="${BUILD_DIR}:${RUNTIME_DIR}:${LD_LIBRARY_PATH}"
 export DISPLAY="${DISPLAY:-:0}"
 
+# 4.1 Audio buffer & driver settings (prevents audio crackling / buffer underrun)
+export SDL_AUDIO_DEVICE_SAMPLE_FRAMES="${SDL_AUDIO_DEVICE_SAMPLE_FRAMES:-2048}"
+
 mkdir -p "${SCRIPT_DIR}/cache/shaders/shareable" "${SCRIPT_DIR}/user_data"
 
 # Garante que os shaders pré-compilados do jogo estejam no cache do desktop
