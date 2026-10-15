@@ -65,7 +65,7 @@ class PipelineManager {
   bool Initialize(rex::ui::vulkan::VulkanDevice* device);
   void Shutdown();
 
-  VkRenderPass GetOrCreateRenderPass(VkFormat color_format);
+  VkRenderPass GetOrCreateRenderPass(VkFormat color_format, VkFormat depth_format = VK_FORMAT_UNDEFINED);
   VkPipeline GetOrCreatePipeline(const PipelineKey& key, VkRenderPass render_pass);
   VkPipelineLayout GetPipelineLayout() const { return pipeline_layout_; }
 
@@ -89,6 +89,7 @@ class PipelineManager {
   VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
   VkRenderPass render_pass_ = VK_NULL_HANDLE;
   VkFormat render_pass_format_ = VK_FORMAT_UNDEFINED;
+  VkFormat render_pass_depth_format_ = VK_FORMAT_UNDEFINED;
 
   std::unordered_map<PipelineKey, VkPipeline, PipelineKeyHasher> pipelines_;
 };

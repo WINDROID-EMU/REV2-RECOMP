@@ -30,6 +30,8 @@ class ShaderManager {
   VkShaderModule GetOrCreateModule(VkDevice device, uint64_t ucode_hash);
   VkShaderModule GetFallbackVertexModule(VkDevice device);
   VkShaderModule GetFallbackPixelModule(VkDevice device);
+  VkShaderModule GetDefaultPrebakedVertexModule(VkDevice device);
+  VkShaderModule GetDefaultPrebakedPixelModule(VkDevice device);
 
   size_t ShaderCount() const { return shaders_.size(); }
   bool IsLoaded() const { return loaded_; }

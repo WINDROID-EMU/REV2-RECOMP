@@ -72,6 +72,7 @@ struct VulkanDispatch {
 
   // Physical device functions
   PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nullptr;
+  PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties = nullptr;
 
   bool initialized = false;
 
@@ -96,6 +97,8 @@ struct VulkanDispatch {
 
     vkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(
         dlsym(libvk, "vkGetPhysicalDeviceMemoryProperties"));
+    vkGetPhysicalDeviceFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(
+        dlsym(libvk, "vkGetPhysicalDeviceFormatProperties"));
 
 #define LOAD_VK_FN(name) \
     name = reinterpret_cast<PFN_##name>(vkGetDeviceProcAddr(dev, #name)); \

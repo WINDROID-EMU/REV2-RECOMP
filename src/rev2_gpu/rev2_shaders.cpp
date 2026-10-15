@@ -216,4 +216,24 @@ VkShaderModule ShaderManager::GetFallbackPixelModule(VkDevice device) {
   return VK_NULL_HANDLE;
 }
 
+VkShaderModule ShaderManager::GetDefaultPrebakedVertexModule(VkDevice device) {
+  for (auto& [hash, s] : shaders_) {
+    if (s.shader_type == 0 && !s.spirv.empty()) {
+      VkShaderModule mod = GetOrCreateModule(device, hash);
+      if (mod != VK_NULL_HANDLE) return mod;
+    }
+  }
+  return GetFallbackVertexModule(device);
+}
+
+VkShaderModule ShaderManager::GetDefaultPrebakedPixelModule(VkDevice device) {
+  for (auto& [hash, s] : shaders_) {
+    if (s.shader_type == 1 && !s.spirv.empty()) {
+      VkShaderModule mod = GetOrCreateModule(device, hash);
+      if (mod != VK_NULL_HANDLE) return mod;
+    }
+  }
+  return GetFallbackPixelModule(device);
+}
+
 } // namespace rev2::gpu

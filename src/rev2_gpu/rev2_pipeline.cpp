@@ -228,8 +228,10 @@ void PipelineManager::Shutdown() {
   device_ = nullptr;
 }
 
-VkRenderPass PipelineManager::GetOrCreateRenderPass(VkFormat color_format) {
-  if (render_pass_ != VK_NULL_HANDLE && render_pass_format_ == color_format) {
+VkRenderPass PipelineManager::GetOrCreateRenderPass(VkFormat color_format, VkFormat depth_format) {
+  if (render_pass_ != VK_NULL_HANDLE &&
+      render_pass_format_ == color_format &&
+      render_pass_depth_format_ == depth_format) {
     return render_pass_;
   }
   if (!device_) return VK_NULL_HANDLE;
@@ -241,6 +243,8 @@ VkRenderPass PipelineManager::GetOrCreateRenderPass(VkFormat color_format) {
     render_pass_ = VK_NULL_HANDLE;
   }
 
+  std::vector<VkAttachmentDescription> attachments;
+
   VkAttachmentDescription color_attachment{};
   color_attachment.format = color_format;
   color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -250,15 +254,37 @@ VkRenderPass PipelineManager::GetOrCreateRenderPass(VkFormat color_format) {
   color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
   color_attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   color_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  attachments.push_back(color_attachment);
 
   VkAttachmentReference color_ref{};
   color_ref.attachment = 0;
   color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+  VkAttachmentReference depth_ref{};
+  bool has_depth = (depth_format != VK_FORMAT_UNDEFINED);
+  if (has_depth) {
+    VkAttachmentDescription depth_attachment{};
+    depth_attachment.format = depth_format;
+    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments.push_back(depth_attachment);
+
+    depth_ref.attachment = 1;
+    depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  }
+
   VkSubpassDescription subpass{};
   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &color_ref;
+  if (has_depth) {
+    subpass.pDepthStencilAttachment = &depth_ref;
+  }
 
   VkSubpassDependency dependency{};
   dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -267,11 +293,16 @@ VkRenderPass PipelineManager::GetOrCreateRenderPass(VkFormat color_format) {
   dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   dependency.srcAccessMask = 0;
   dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+  if (has_depth) {
+    dependency.srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+  }
 
   VkRenderPassCreateInfo rp_ci{};
   rp_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  rp_ci.attachmentCount = 1;
-  rp_ci.pAttachments = &color_attachment;
+  rp_ci.attachmentCount = static_cast<uint32_t>(attachments.size());
+  rp_ci.pAttachments = attachments.data();
   rp_ci.subpassCount = 1;
   rp_ci.pSubpasses = &subpass;
   rp_ci.dependencyCount = 1;
@@ -279,6 +310,7 @@ VkRenderPass PipelineManager::GetOrCreateRenderPass(VkFormat color_format) {
 
   if (dfn.vkCreateRenderPass(dev, &rp_ci, nullptr, &render_pass_) == VK_SUCCESS) {
     render_pass_format_ = color_format;
+    render_pass_depth_format_ = depth_format;
     return render_pass_;
   }
 

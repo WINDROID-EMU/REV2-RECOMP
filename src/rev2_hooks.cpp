@@ -125,13 +125,14 @@ extern "C" void sub_834ED068(PPCContext& __restrict ctx, uint8_t* base) {
 
 // 11. SetStreamSource (0x835023E8)
 extern "C" void sub_835023E8(PPCContext& __restrict ctx, uint8_t* base) {
-  rev2::gpu::OnSetStreamSource(ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32);
+  rev2::gpu::OnSetStreamSource(ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, base);
   __imp__sub_835023E8(ctx, base);
 }
 
 // 12. SetIndices (0x834E7708)
 extern "C" void sub_834E7708(PPCContext& __restrict ctx, uint8_t* base) {
-  rev2::gpu::OnSetIndices(ctx.r4.u32);
+  uint32_t ib_addr = (ctx.r5.u32 != 0) ? ctx.r5.u32 : ctx.r4.u32;
+  rev2::gpu::OnSetIndices(ib_addr, base);
   __imp__sub_834E7708(ctx, base);
 }
 

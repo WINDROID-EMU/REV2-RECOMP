@@ -23,8 +23,8 @@ void OnSetTexture(uint32_t sampler, uint32_t texture_addr, const uint8_t* base);
 void OnSetSamplerState(uint32_t sampler, uint32_t type, uint32_t value);
 void OnSetRenderState(uint32_t state, uint32_t value);
 
-void OnSetStreamSource(uint32_t stream, uint32_t buf_addr, uint32_t offset, uint32_t stride);
-void OnSetIndices(uint32_t idx_buf_addr);
+void OnSetStreamSource(uint32_t stream, uint32_t buf_addr, uint32_t offset, uint32_t stride, const uint8_t* base = nullptr);
+void OnSetIndices(uint32_t idx_buf_addr, const uint8_t* base = nullptr);
 void OnSetVertexDeclaration(uint32_t decl_addr);
 
 void OnDrawIndexedPrimitive(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32_t num_vtx, uint32_t start_idx, uint32_t prim_count);

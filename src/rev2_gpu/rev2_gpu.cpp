@@ -378,6 +378,120 @@ static bool EnsureDummyTexture(rex::ui::vulkan::VulkanDevice* vk_dev) {
   return true;
 }
 
+static VkImage s_depth_image = VK_NULL_HANDLE;
+static VkDeviceMemory s_depth_mem = VK_NULL_HANDLE;
+static VkImageView s_depth_view = VK_NULL_HANDLE;
+static uint32_t s_depth_width = 0;
+static uint32_t s_depth_height = 0;
+static VkFormat s_depth_format = VK_FORMAT_UNDEFINED;
+
+static VkFormat FindSupportedDepthFormat(rex::ui::vulkan::VulkanDevice* vk_dev) {
+  if (s_depth_format != VK_FORMAT_UNDEFINED) return s_depth_format;
+  auto& dfn = GetVulkanDispatch();
+  VkPhysicalDevice phys = vk_dev->physical_device();
+
+  std::vector<VkFormat> candidates = {
+    VK_FORMAT_D32_SFLOAT,
+    VK_FORMAT_D24_UNORM_S8_UINT,
+    VK_FORMAT_D32_SFLOAT_S8_UINT
+  };
+
+  for (VkFormat format : candidates) {
+    VkFormatProperties props{};
+    dfn.vkGetPhysicalDeviceFormatProperties(phys, format, &props);
+    if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) ==
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+      s_depth_format = format;
+      std::fprintf(stderr, "[REV2_GPU] Selected Depth Format: %d\n", format);
+      return format;
+    }
+  }
+
+  s_depth_format = VK_FORMAT_D32_SFLOAT;
+  return s_depth_format;
+}
+
+static bool EnsureDepthBuffer(rex::ui::vulkan::VulkanDevice* vk_dev, uint32_t w, uint32_t h) {
+  if (s_depth_image != VK_NULL_HANDLE && s_depth_width == w && s_depth_height == h) {
+    return true;
+  }
+  VkDevice dev = vk_dev->device();
+  auto& dfn = GetVulkanDispatch();
+
+  if (s_depth_view != VK_NULL_HANDLE) {
+    dfn.vkDestroyImageView(dev, s_depth_view, nullptr);
+    s_depth_view = VK_NULL_HANDLE;
+  }
+  if (s_depth_image != VK_NULL_HANDLE) {
+    dfn.vkDestroyImage(dev, s_depth_image, nullptr);
+    s_depth_image = VK_NULL_HANDLE;
+  }
+  if (s_depth_mem != VK_NULL_HANDLE) {
+    dfn.vkFreeMemory(dev, s_depth_mem, nullptr);
+    s_depth_mem = VK_NULL_HANDLE;
+  }
+
+  s_depth_width = w;
+  s_depth_height = h;
+  VkFormat depth_format = FindSupportedDepthFormat(vk_dev);
+
+  VkImageCreateInfo img_ci{};
+  img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  img_ci.imageType = VK_IMAGE_TYPE_2D;
+  img_ci.format = depth_format;
+  img_ci.extent = {w, h, 1};
+  img_ci.mipLevels = 1;
+  img_ci.arrayLayers = 1;
+  img_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+  img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+  img_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+  img_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+  if (dfn.vkCreateImage(dev, &img_ci, nullptr, &s_depth_image) != VK_SUCCESS) {
+    std::fprintf(stderr, "[REV2_GPU] Falha ao criar Depth VkImage (%ux%u)\n", w, h);
+    return false;
+  }
+
+  VkMemoryRequirements mem_reqs{};
+  dfn.vkGetImageMemoryRequirements(dev, s_depth_image, &mem_reqs);
+  uint32_t mem_type = FindMemoryType(vk_dev, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+  VkMemoryAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  alloc_info.allocationSize = mem_reqs.size;
+  alloc_info.memoryTypeIndex = mem_type;
+
+  if (dfn.vkAllocateMemory(dev, &alloc_info, nullptr, &s_depth_mem) != VK_SUCCESS) {
+    std::fprintf(stderr, "[REV2_GPU] Falha ao alocar memoria para Depth Buffer\n");
+    return false;
+  }
+
+  dfn.vkBindImageMemory(dev, s_depth_image, s_depth_mem, 0);
+
+  VkImageViewCreateInfo view_ci{};
+  view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  view_ci.image = s_depth_image;
+  view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  view_ci.format = depth_format;
+  view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+  if (depth_format == VK_FORMAT_D24_UNORM_S8_UINT || depth_format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+    view_ci.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+  }
+  view_ci.subresourceRange.baseMipLevel = 0;
+  view_ci.subresourceRange.levelCount = 1;
+  view_ci.subresourceRange.baseArrayLayer = 0;
+  view_ci.subresourceRange.layerCount = 1;
+
+  if (dfn.vkCreateImageView(dev, &view_ci, nullptr, &s_depth_view) != VK_SUCCESS) {
+    std::fprintf(stderr, "[REV2_GPU] Falha ao criar VkImageView para Depth Buffer\n");
+    return false;
+  }
+
+  std::fprintf(stderr, "[REV2_GPU] Depth Buffer criado com sucesso (%ux%u, format=%d)\n", w, h, depth_format);
+  return true;
+}
+
 // Per-texture staging buffers to avoid aliasing multiple uploads in one command buffer
 struct StagingBuffer {
   VkBuffer buf = VK_NULL_HANDLE;
@@ -808,14 +922,21 @@ void OnPresent(uint32_t flags) {
                     0, 0, nullptr, 0, nullptr, 1, &barrier_to_color
                 );
 
-                VkRenderPass rp = PipelineManager::Instance().GetOrCreateRenderPass(rex::ui::vulkan::VulkanPresenter::kGuestOutputFormat);
+                EnsureDepthBuffer(vk_dev, w, h);
+                VkRenderPass rp = PipelineManager::Instance().GetOrCreateRenderPass(
+                    rex::ui::vulkan::VulkanPresenter::kGuestOutputFormat, s_depth_format);
                 if (rp != VK_NULL_HANDLE) {
                   VkImageView view = vk_ctx.image_view();
+                  std::vector<VkImageView> fb_attachments = { view };
+                  if (s_depth_view != VK_NULL_HANDLE) {
+                    fb_attachments.push_back(s_depth_view);
+                  }
+
                   VkFramebufferCreateInfo fb_ci{};
                   fb_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                   fb_ci.renderPass = rp;
-                  fb_ci.attachmentCount = 1;
-                  fb_ci.pAttachments = &view;
+                  fb_ci.attachmentCount = static_cast<uint32_t>(fb_attachments.size());
+                  fb_ci.pAttachments = fb_attachments.data();
                   fb_ci.width = w;
                   fb_ci.height = h;
                   fb_ci.layers = 1;
@@ -830,15 +951,24 @@ void OnPresent(uint32_t flags) {
                     rp_bi.renderArea.offset = {0, 0};
                     rp_bi.renderArea.extent = {w, h};
 
-                    VkClearValue cv{};
+                    std::vector<VkClearValue> clear_values;
+                    VkClearValue color_cv{};
                     uint32_t c = ps.clear_state.color;
-                    cv.color.float32[0] = ((c >> 16) & 0xFF) / 255.0f;
-                    cv.color.float32[1] = ((c >> 8) & 0xFF) / 255.0f;
-                    cv.color.float32[2] = (c & 0xFF) / 255.0f;
-                    cv.color.float32[3] = ((c >> 24) & 0xFF) / 255.0f;
+                    color_cv.color.float32[0] = ((c >> 16) & 0xFF) / 255.0f;
+                    color_cv.color.float32[1] = ((c >> 8) & 0xFF) / 255.0f;
+                    color_cv.color.float32[2] = (c & 0xFF) / 255.0f;
+                    color_cv.color.float32[3] = ((c >> 24) & 0xFF) / 255.0f;
+                    clear_values.push_back(color_cv);
 
-                    rp_bi.clearValueCount = 1;
-                    rp_bi.pClearValues = &cv;
+                    if (s_depth_view != VK_NULL_HANDLE) {
+                      VkClearValue depth_cv{};
+                      depth_cv.depthStencil.depth = (ps.clear_state.z > 0.0f) ? ps.clear_state.z : 1.0f;
+                      depth_cv.depthStencil.stencil = ps.clear_state.stencil;
+                      clear_values.push_back(depth_cv);
+                    }
+
+                    rp_bi.clearValueCount = static_cast<uint32_t>(clear_values.size());
+                    rp_bi.pClearValues = clear_values.data();
 
                     dfn.vkCmdBeginRenderPass(s_clear_cmd_buf, &rp_bi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1064,7 +1194,12 @@ void OnSetVSConstantF(uint32_t start_reg, const float* data, uint32_t count) {
   auto& ps = PipelineState::Instance();
   ps.stats.vs_constant_updates.fetch_add(count, std::memory_order_relaxed);
   if (data && start_reg + count <= ps.vs_constants.size()) {
-    std::memcpy(&ps.vs_constants[start_reg], data, count * sizeof(Vector4f));
+    const uint32_t* src_dw = reinterpret_cast<const uint32_t*>(data);
+    uint32_t* dst_dw = reinterpret_cast<uint32_t*>(&ps.vs_constants[start_reg]);
+    size_t total_dwords = count * 4;
+    for (size_t i = 0; i < total_dwords; ++i) {
+      dst_dw[i] = __builtin_bswap32(src_dw[i]);
+    }
   }
 }
 
@@ -1072,7 +1207,12 @@ void OnSetPSConstantF(uint32_t start_reg, const float* data, uint32_t count) {
   auto& ps = PipelineState::Instance();
   ps.stats.ps_constant_updates.fetch_add(count, std::memory_order_relaxed);
   if (data && start_reg + count <= ps.ps_constants.size()) {
-    std::memcpy(&ps.ps_constants[start_reg], data, count * sizeof(Vector4f));
+    const uint32_t* src_dw = reinterpret_cast<const uint32_t*>(data);
+    uint32_t* dst_dw = reinterpret_cast<uint32_t*>(&ps.ps_constants[start_reg]);
+    size_t total_dwords = count * 4;
+    for (size_t i = 0; i < total_dwords; ++i) {
+      dst_dw[i] = __builtin_bswap32(src_dw[i]);
+    }
   }
 }
 
@@ -1190,18 +1330,36 @@ void OnSetRenderState(uint32_t state, uint32_t value) {
   }
 }
 
-void OnSetStreamSource(uint32_t stream, uint32_t buf_addr, uint32_t offset, uint32_t stride) {
+void OnSetStreamSource(uint32_t stream, uint32_t buf_addr, uint32_t offset, uint32_t stride, const uint8_t* base) {
   auto& ps = PipelineState::Instance();
   ps.stats.stream_source_changes.fetch_add(1, std::memory_order_relaxed);
+  uint32_t real_buf_addr = buf_addr;
+  if (base && buf_addr >= 0x80000000) {
+    // No X360 D3DVertexBuffer, offset +24 guarda o endereco real dos dados em memoria guest/fisica
+    uint32_t ptr_in_obj = *reinterpret_cast<const uint32_t*>(base + buf_addr + 24);
+    ptr_in_obj = __builtin_bswap32(ptr_in_obj);
+    if (ptr_in_obj > 0 && ptr_in_obj < 0x20000000) {
+      real_buf_addr = ptr_in_obj;
+    }
+  }
   if (stream < ps.vertex_streams.size()) {
-    ps.vertex_streams[stream] = {buf_addr, offset, stride};
+    ps.vertex_streams[stream] = {real_buf_addr, offset, stride};
   }
 }
 
-void OnSetIndices(uint32_t idx_buf_addr) {
+void OnSetIndices(uint32_t idx_buf_addr, const uint8_t* base) {
   auto& ps = PipelineState::Instance();
   ps.stats.indices_changes.fetch_add(1, std::memory_order_relaxed);
-  ps.index_buffer.buffer_guest_addr = idx_buf_addr;
+  uint32_t real_idx_addr = idx_buf_addr;
+  if (base && idx_buf_addr >= 0x80000000) {
+    // No X360 D3DIndexBuffer, offset +24 guarda o endereco real dos dados em memoria guest/fisica
+    uint32_t ptr_in_obj = *reinterpret_cast<const uint32_t*>(base + idx_buf_addr + 24);
+    ptr_in_obj = __builtin_bswap32(ptr_in_obj);
+    if (ptr_in_obj > 0 && ptr_in_obj < 0x20000000) {
+      real_idx_addr = ptr_in_obj;
+    }
+  }
+  ps.index_buffer.buffer_guest_addr = real_idx_addr;
 }
 
 void OnSetVertexDeclaration(uint32_t decl_addr) {
