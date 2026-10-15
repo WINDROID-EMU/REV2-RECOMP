@@ -52,6 +52,7 @@ struct VulkanDispatch {
   PFN_vkDestroyPipelineLayout vkDestroyPipelineLayout = nullptr;
   PFN_vkCreateDescriptorPool vkCreateDescriptorPool = nullptr;
   PFN_vkDestroyDescriptorPool vkDestroyDescriptorPool = nullptr;
+  PFN_vkResetDescriptorPool vkResetDescriptorPool = nullptr;
   PFN_vkAllocateDescriptorSets vkAllocateDescriptorSets = nullptr;
   PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets = nullptr;
 
@@ -149,6 +150,7 @@ struct VulkanDispatch {
     LOAD_VK_FN(vkDestroyPipelineLayout);
     LOAD_VK_FN(vkCreateDescriptorPool);
     LOAD_VK_FN(vkDestroyDescriptorPool);
+    LOAD_VK_FN(vkResetDescriptorPool);
     LOAD_VK_FN(vkAllocateDescriptorSets);
     LOAD_VK_FN(vkUpdateDescriptorSets);
 

@@ -70,9 +70,17 @@ static VkBuffer s_vk_vertex_buf = VK_NULL_HANDLE;
 static VkDeviceMemory s_vk_vertex_mem = VK_NULL_HANDLE;
 static size_t s_vk_vertex_cap = 0;
 
-static VkBuffer s_vk_uniform_buf = VK_NULL_HANDLE;
-static VkDeviceMemory s_vk_uniform_mem = VK_NULL_HANDLE;
-static size_t s_vk_uniform_cap = 0;
+static VkBuffer s_vk_vs_const_buf = VK_NULL_HANDLE;
+static VkDeviceMemory s_vk_vs_const_mem = VK_NULL_HANDLE;
+static size_t s_vk_vs_const_cap = 0;
+
+static VkBuffer s_vk_ps_const_buf = VK_NULL_HANDLE;
+static VkDeviceMemory s_vk_ps_const_mem = VK_NULL_HANDLE;
+static size_t s_vk_ps_const_cap = 0;
+
+static VkBuffer s_vk_sys_const_buf = VK_NULL_HANDLE;
+static VkDeviceMemory s_vk_sys_const_mem = VK_NULL_HANDLE;
+static size_t s_vk_sys_const_cap = 0;
 
 static uint32_t FindMemoryType(rex::ui::vulkan::VulkanDevice* vk_dev, uint32_t type_filter, VkMemoryPropertyFlags properties) {
   if (!vk_dev) return 0;
@@ -631,6 +639,173 @@ static VkSamplerAddressMode MapXenosAddressMode(uint32_t xm) {
   }
 }
 
+static VkDescriptorPool s_draw_desc_pool = VK_NULL_HANDLE;
+
+struct TextureKey {
+  uint32_t addrs[16];
+  bool operator==(const TextureKey& o) const {
+    return std::memcmp(addrs, o.addrs, sizeof(addrs)) == 0;
+  }
+};
+
+struct TextureKeyHash {
+  size_t operator()(const TextureKey& k) const noexcept {
+    size_t h = 0;
+    for (uint32_t a : k.addrs) {
+      h ^= std::hash<uint32_t>{}(a) + 0x9e3779b9 + (h << 6) + (h >> 2);
+    }
+    return h;
+  }
+};
+
+static std::unordered_map<TextureKey, VkDescriptorSet, TextureKeyHash> s_frame_texture_sets;
+
+static bool EnsureDrawDescPool(rex::ui::vulkan::VulkanDevice* vk_dev) {
+  if (s_draw_desc_pool != VK_NULL_HANDLE) return true;
+  if (!vk_dev) return false;
+  VkDevice dev = vk_dev->device();
+  auto& dfn = GetVulkanDispatch();
+
+  std::array<VkDescriptorPoolSize, 2> pool_sizes{};
+  pool_sizes[0].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  pool_sizes[0].descriptorCount = 1024;
+  pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+  pool_sizes[1].descriptorCount = 1024;
+
+  VkDescriptorPoolCreateInfo pool_ci{};
+  pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool_ci.maxSets = 64;
+  pool_ci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+  pool_ci.pPoolSizes = pool_sizes.data();
+  pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+  VkResult res = dfn.vkCreateDescriptorPool(dev, &pool_ci, nullptr, &s_draw_desc_pool);
+  return (res == VK_SUCCESS);
+}
+
+static VkDescriptorSet GetOrCreateFrameTextureSet(
+    rex::ui::vulkan::VulkanDevice* vk_dev,
+    const std::array<TextureBinding, 16>& textures,
+    const std::array<SamplerBinding, 16>& samplers) {
+  TextureKey key{};
+  for (size_t i = 0; i < 16; ++i) {
+    key.addrs[i] = textures[i].guest_addr;
+  }
+  auto it = s_frame_texture_sets.find(key);
+  if (it != s_frame_texture_sets.end()) {
+    return it->second;
+  }
+
+  if (!vk_dev || !EnsureDrawDescPool(vk_dev)) {
+    return PipelineManager::Instance().GetDescriptorSet(3);
+  }
+
+  VkDevice dev = vk_dev->device();
+  auto& dfn = GetVulkanDispatch();
+  auto& pm = PipelineManager::Instance();
+  VkDescriptorSetLayout layout3 = pm.GetDescriptorSetLayout(3);
+  if (layout3 == VK_NULL_HANDLE) {
+    return pm.GetDescriptorSet(3);
+  }
+
+  VkDescriptorSetAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  alloc_info.descriptorPool = s_draw_desc_pool;
+  alloc_info.descriptorSetCount = 1;
+  alloc_info.pSetLayouts = &layout3;
+
+  VkDescriptorSet set3 = VK_NULL_HANDLE;
+  if (dfn.vkAllocateDescriptorSets(dev, &alloc_info, &set3) != VK_SUCCESS) {
+    return pm.GetDescriptorSet(3);
+  }
+
+  std::array<VkDescriptorImageInfo, 16> img_infos{};
+  std::array<VkDescriptorImageInfo, 16> smp_infos{};
+  std::array<VkWriteDescriptorSet, 32> writes3{};
+
+  for (uint32_t s = 0; s < 16; ++s) {
+    VkImageView view = s_dummy_view;
+    uint32_t addr = textures[s].guest_addr;
+    if (addr != 0) {
+      auto cit = s_texture_cache.find(addr);
+      if (cit != s_texture_cache.end() && cit->second.vk_view != VK_NULL_HANDLE) {
+        view = cit->second.vk_view;
+      }
+    }
+    img_infos[s].imageView = view;
+    img_infos[s].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    writes3[s].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes3[s].dstSet = set3;
+    writes3[s].dstBinding = s;
+    writes3[s].dstArrayElement = 0;
+    writes3[s].descriptorCount = 1;
+    writes3[s].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    writes3[s].pImageInfo = &img_infos[s];
+
+    auto& samp_bind = const_cast<SamplerBinding&>(samplers[s]);
+    if (samp_bind.vk_sampler == VK_NULL_HANDLE) {
+      VkSamplerCreateInfo sci{};
+      sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+      sci.magFilter = MapXenosFilter(samp_bind.mag_filter);
+      sci.minFilter = MapXenosFilter(samp_bind.min_filter);
+      sci.mipmapMode = (samp_bind.mip_filter == 0) ? VK_SAMPLER_MIPMAP_MODE_NEAREST : VK_SAMPLER_MIPMAP_MODE_LINEAR;
+      sci.addressModeU = MapXenosAddressMode(samp_bind.address_u);
+      sci.addressModeV = MapXenosAddressMode(samp_bind.address_v);
+      sci.addressModeW = MapXenosAddressMode(samp_bind.address_w);
+      sci.maxAnisotropy = 1.0f;
+      sci.minLod = 0.0f;
+      sci.maxLod = VK_LOD_CLAMP_NONE;
+      dfn.vkCreateSampler(dev, &sci, nullptr, &samp_bind.vk_sampler);
+    }
+    VkSampler sampler = (samp_bind.vk_sampler != VK_NULL_HANDLE)
+                            ? samp_bind.vk_sampler
+                            : s_default_sampler;
+    smp_infos[s].sampler = sampler;
+
+    writes3[16 + s].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes3[16 + s].dstSet = set3;
+    writes3[16 + s].dstBinding = 16 + s;
+    writes3[16 + s].dstArrayElement = 0;
+    writes3[16 + s].descriptorCount = 1;
+    writes3[16 + s].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    writes3[16 + s].pImageInfo = &smp_infos[s];
+  }
+
+  dfn.vkUpdateDescriptorSets(dev, static_cast<uint32_t>(writes3.size()), writes3.data(), 0, nullptr);
+  s_frame_texture_sets[key] = set3;
+  return set3;
+}
+
+static void CaptureDrawConstantsAndTextures(PipelineState& ps, VkDrawIndexedCommand& cmd) {
+  // Snapshot VS constants (256 vec4 = 4096 bytes)
+  if (ps.vs_constants_dirty || ps.frame_vs_constants_data.empty()) {
+    size_t cur = ps.frame_vs_constants_data.size();
+    size_t aligned = (cur + 255) & ~size_t(255);
+    if (aligned > cur) ps.frame_vs_constants_data.resize(aligned, 0);
+    ps.current_vs_constants_offset = static_cast<uint32_t>(ps.frame_vs_constants_data.size());
+    const uint8_t* raw = reinterpret_cast<const uint8_t*>(ps.vs_constants.data());
+    ps.frame_vs_constants_data.insert(ps.frame_vs_constants_data.end(), raw, raw + sizeof(ps.vs_constants));
+    ps.vs_constants_dirty = false;
+  }
+  cmd.vs_constants_offset = ps.current_vs_constants_offset;
+
+  // Snapshot PS constants (64 vec4 = 1024 bytes)
+  if (ps.ps_constants_dirty || ps.frame_ps_constants_data.empty()) {
+    size_t cur = ps.frame_ps_constants_data.size();
+    size_t aligned = (cur + 255) & ~size_t(255);
+    if (aligned > cur) ps.frame_ps_constants_data.resize(aligned, 0);
+    ps.current_ps_constants_offset = static_cast<uint32_t>(ps.frame_ps_constants_data.size());
+    const uint8_t* raw = reinterpret_cast<const uint8_t*>(ps.ps_constants.data());
+    ps.frame_ps_constants_data.insert(ps.frame_ps_constants_data.end(), raw, raw + sizeof(ps.ps_constants));
+    ps.ps_constants_dirty = false;
+  }
+  cmd.ps_constants_offset = ps.current_ps_constants_offset;
+
+  // Snapshot active textures for this draw call
+  cmd.textures = ps.textures;
+}
+
 void Initialize() {
   if (s_initialized) return;
   s_initialized = true;
@@ -721,15 +896,36 @@ void OnPresent(uint32_t flags) {
           UploadBufferData(vk_dev, s_vk_vertex_mem, ps.frame_vertex_data.data(), ps.frame_vertex_data.size());
         }
 
-        // Upload de constantes para Uniform Buffer (Set 1)
-        EnsureBuffer(vk_dev, s_vk_uniform_buf, s_vk_uniform_mem, s_vk_uniform_cap,
-                     65536, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        static std::vector<uint8_t> s_ubo_staging(65536, 0);
-        std::memcpy(s_ubo_staging.data() + 256, ps.vs_constants.data(), sizeof(ps.vs_constants));
-        std::memcpy(s_ubo_staging.data() + 4608, ps.ps_constants.data(), sizeof(ps.ps_constants));
-        UploadBufferData(vk_dev, s_vk_uniform_mem, s_ubo_staging.data(), 9472);
+        if (s_draw_desc_pool != VK_NULL_HANDLE) {
+          dfn.vkResetDescriptorPool(vk_dev->device(), s_draw_desc_pool, 0);
+        }
+        s_frame_texture_sets.clear();
 
-        // Atualização dos conjuntos de descritores (Set 0 e Set 1)
+        // Upload de constantes para Uniform Buffers dinamicos (Set 1)
+        if (!ps.frame_vs_constants_data.empty()) {
+          EnsureBuffer(vk_dev, s_vk_vs_const_buf, s_vk_vs_const_mem, s_vk_vs_const_cap,
+                       ps.frame_vs_constants_data.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+          UploadBufferData(vk_dev, s_vk_vs_const_mem, ps.frame_vs_constants_data.data(), ps.frame_vs_constants_data.size());
+        } else {
+          EnsureBuffer(vk_dev, s_vk_vs_const_buf, s_vk_vs_const_mem, s_vk_vs_const_cap,
+                       4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+          UploadBufferData(vk_dev, s_vk_vs_const_mem, ps.vs_constants.data(), sizeof(ps.vs_constants));
+        }
+
+        if (!ps.frame_ps_constants_data.empty()) {
+          EnsureBuffer(vk_dev, s_vk_ps_const_buf, s_vk_ps_const_mem, s_vk_ps_const_cap,
+                       ps.frame_ps_constants_data.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+          UploadBufferData(vk_dev, s_vk_ps_const_mem, ps.frame_ps_constants_data.data(), ps.frame_ps_constants_data.size());
+        } else {
+          EnsureBuffer(vk_dev, s_vk_ps_const_buf, s_vk_ps_const_mem, s_vk_ps_const_cap,
+                       1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+          UploadBufferData(vk_dev, s_vk_ps_const_mem, ps.ps_constants.data(), sizeof(ps.ps_constants));
+        }
+
+        EnsureBuffer(vk_dev, s_vk_sys_const_buf, s_vk_sys_const_mem, s_vk_sys_const_cap,
+                     1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+        // Atualizacao dos conjuntos de descritores (Set 0 e Set 1)
         VkDevice dev = vk_dev->device();
         auto& pm = PipelineManager::Instance();
         VkDescriptorSet set0 = pm.GetDescriptorSet(0);
@@ -751,12 +947,12 @@ void OnPresent(uint32_t flags) {
           dfn.vkUpdateDescriptorSets(dev, 1, &write0, 0, nullptr);
         }
 
-        if (set1 != VK_NULL_HANDLE && s_vk_uniform_buf != VK_NULL_HANDLE) {
-          VkDescriptorBufferInfo ubo_sys_info{s_vk_uniform_buf, 0, 256};
-          VkDescriptorBufferInfo ubo_vs_info{s_vk_uniform_buf, 256, sizeof(ps.vs_constants)};
-          VkDescriptorBufferInfo ubo_ps_info{s_vk_uniform_buf, 4608, sizeof(ps.ps_constants)};
-          VkDescriptorBufferInfo ubo_bool_info{s_vk_uniform_buf, 8960, 256};
-          VkDescriptorBufferInfo ubo_fetch_info{s_vk_uniform_buf, 9216, 256};
+        if (set1 != VK_NULL_HANDLE && s_vk_vs_const_buf != VK_NULL_HANDLE && s_vk_ps_const_buf != VK_NULL_HANDLE) {
+          VkDescriptorBufferInfo ubo_sys_info{s_vk_sys_const_buf, 0, 256};
+          VkDescriptorBufferInfo ubo_vs_info{s_vk_vs_const_buf, 0, sizeof(ps.vs_constants)};
+          VkDescriptorBufferInfo ubo_ps_info{s_vk_ps_const_buf, 0, sizeof(ps.ps_constants)};
+          VkDescriptorBufferInfo ubo_bool_info{s_vk_sys_const_buf, 256, 256};
+          VkDescriptorBufferInfo ubo_fetch_info{s_vk_sys_const_buf, 512, 256};
 
           std::array<VkWriteDescriptorSet, 5> writes1{};
           writes1[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -770,14 +966,14 @@ void OnPresent(uint32_t flags) {
           writes1[1].dstSet = set1;
           writes1[1].dstBinding = 1;
           writes1[1].descriptorCount = 1;
-          writes1[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+          writes1[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
           writes1[1].pBufferInfo = &ubo_vs_info;
 
           writes1[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
           writes1[2].dstSet = set1;
           writes1[2].dstBinding = 2;
           writes1[2].descriptorCount = 1;
-          writes1[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+          writes1[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
           writes1[2].pBufferInfo = &ubo_ps_info;
 
           writes1[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -793,11 +989,7 @@ void OnPresent(uint32_t flags) {
           writes1[4].descriptorCount = 1;
           writes1[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
           writes1[4].pBufferInfo = &ubo_fetch_info;
-          std::fprintf(stderr, "[REV2_GPU] Calling vkUpdateDescriptorSets for set1=%p, writes=%zu\n", (void*)set1, writes1.size());
-          std::fflush(stderr);
           dfn.vkUpdateDescriptorSets(dev, static_cast<uint32_t>(writes1.size()), writes1.data(), 0, nullptr);
-          std::fprintf(stderr, "[REV2_GPU] vkUpdateDescriptorSets done\n");
-          std::fflush(stderr);
         }
 
         // Atualização do Set 3 (Texturas e Samplers)
@@ -978,21 +1170,31 @@ void OnPresent(uint32_t flags) {
                     VkRect2D sc{{0, 0}, {w, h}};
                     dfn.vkCmdSetScissor(s_clear_cmd_buf, 0, 1, &sc);
 
-                    // Vincula conjuntos de descritores (Sets 0..3)
-                    std::array<VkDescriptorSet, 4> desc_sets = {
-                      pm.GetDescriptorSet(0),
-                      pm.GetDescriptorSet(1),
-                      pm.GetDescriptorSet(2),
-                      pm.GetDescriptorSet(3)
-                    };
-                    dfn.vkCmdBindDescriptorSets(
-                      s_clear_cmd_buf,
-                      VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pm.GetPipelineLayout(),
-                      0, static_cast<uint32_t>(desc_sets.size()),
-                      desc_sets.data(),
-                      0, nullptr
-                    );
+                    // Vincula conjuntos de descritores estáticos (Set 0 e Set 2)
+                    VkDescriptorSet set0 = pm.GetDescriptorSet(0);
+                    if (set0 != VK_NULL_HANDLE) {
+                      dfn.vkCmdBindDescriptorSets(
+                        s_clear_cmd_buf,
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        pm.GetPipelineLayout(),
+                        0, 1,
+                        &set0,
+                        0, nullptr
+                      );
+                    }
+                    VkDescriptorSet set2 = pm.GetDescriptorSet(2);
+                    if (set2 != VK_NULL_HANDLE) {
+                      dfn.vkCmdBindDescriptorSets(
+                        s_clear_cmd_buf,
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        pm.GetPipelineLayout(),
+                        2, 1,
+                        &set2,
+                        0, nullptr
+                      );
+                    }
+
+                    VkDescriptorSet last_bound_set3 = VK_NULL_HANDLE;
 
                     for (const auto& cmd : ps.frame_draw_list) {
                       PipelineKey key;
@@ -1011,6 +1213,33 @@ void OnPresent(uint32_t flags) {
                       VkPipeline pipeline = pm.GetOrCreatePipeline(key, rp);
                       if (pipeline != VK_NULL_HANDLE) {
                         dfn.vkCmdBindPipeline(s_clear_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+                        // Vincula Set 1 com offsets dinâmicos de constantes UBO para este draw específico
+                        if (set1 != VK_NULL_HANDLE) {
+                          uint32_t dyn_offsets[2] = { cmd.vs_constants_offset, cmd.ps_constants_offset };
+                          dfn.vkCmdBindDescriptorSets(
+                            s_clear_cmd_buf,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pm.GetPipelineLayout(),
+                            1, 1,
+                            &set1,
+                            2, dyn_offsets
+                          );
+                        }
+
+                        // Vincula Set 3 com as texturas ativas no momento deste draw
+                        VkDescriptorSet draw_set3 = GetOrCreateFrameTextureSet(vk_dev, cmd.textures, ps.samplers);
+                        if (draw_set3 != VK_NULL_HANDLE && draw_set3 != last_bound_set3) {
+                          dfn.vkCmdBindDescriptorSets(
+                            s_clear_cmd_buf,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pm.GetPipelineLayout(),
+                            3, 1,
+                            &draw_set3,
+                            0, nullptr
+                          );
+                          last_bound_set3 = draw_set3;
+                        }
 
                         if (s_vk_vertex_buf != VK_NULL_HANDLE && cmd.vertex_data_size > 0) {
                           VkDeviceSize vtx_offset = cmd.vertex_data_offset;
@@ -1142,9 +1371,7 @@ void OnPresent(uint32_t flags) {
       }
     }
     ps.clear_state.pending = false;
-    ps.frame_draw_list.clear();
-    ps.frame_index_data.clear();
-    ps.frame_vertex_data.clear();
+    ps.ResetFrameCounters();
   }
 }
 
@@ -1200,6 +1427,7 @@ void OnSetVSConstantF(uint32_t start_reg, const float* data, uint32_t count) {
     for (size_t i = 0; i < total_dwords; ++i) {
       dst_dw[i] = __builtin_bswap32(src_dw[i]);
     }
+    ps.vs_constants_dirty = true;
   }
 }
 
@@ -1213,6 +1441,7 @@ void OnSetPSConstantF(uint32_t start_reg, const float* data, uint32_t count) {
     for (size_t i = 0; i < total_dwords; ++i) {
       dst_dw[i] = __builtin_bswap32(src_dw[i]);
     }
+    ps.ps_constants_dirty = true;
   }
 }
 
@@ -1494,6 +1723,9 @@ void EmitVkDrawIndexed(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32
   cmd.ps_handle = ps.current_ps_handle;
   cmd.state = ps.state;
 
+  // P4: Snapshot dinamico de constantes UBO e texturas ativas
+  CaptureDrawConstantsAndTextures(ps, cmd);
+
   // 7. Registra no buffer de quadro da Plume
   ps.frame_draw_list.push_back(cmd);
 }
@@ -1558,6 +1790,9 @@ void EmitVkDrawPrimitive(uint32_t type, uint32_t start_vtx, uint32_t prim_count,
   cmd.vs_handle = ps.current_vs_handle;
   cmd.ps_handle = ps.current_ps_handle;
   cmd.state = ps.state;
+
+  // P4: Snapshot dinamico de constantes UBO e texturas ativas
+  CaptureDrawConstantsAndTextures(ps, cmd);
 
   ps.frame_draw_list.push_back(cmd);
 }

@@ -105,6 +105,13 @@ struct VkDrawIndexedCommand {
   uint32_t vs_handle = 0;
   uint32_t ps_handle = 0;
   RenderState state;
+
+  // Snapshot dinamico de constantes UBO (offset alinhado em bytes no buffer do quadro)
+  uint32_t vs_constants_offset = 0;
+  uint32_t ps_constants_offset = 0;
+
+  // Snapshot das texturas ativas no momento deste draw
+  std::array<TextureBinding, 16> textures{};
 };
 
 struct FrameStats {
@@ -215,6 +222,14 @@ class PipelineState {
   std::vector<uint8_t> frame_index_data;
   std::vector<uint8_t> frame_vertex_data;
 
+  // Buffers de constantes dinâmicas UBO acumulados no quadro (P4)
+  std::vector<uint8_t> frame_vs_constants_data;
+  std::vector<uint8_t> frame_ps_constants_data;
+  bool vs_constants_dirty = true;
+  bool ps_constants_dirty = true;
+  uint32_t current_vs_constants_offset = 0;
+  uint32_t current_ps_constants_offset = 0;
+
   // Métricas
   FrameStats stats;
 
@@ -250,6 +265,12 @@ class PipelineState {
     frame_draw_list.clear();
     frame_index_data.clear();
     frame_vertex_data.clear();
+    frame_vs_constants_data.clear();
+    frame_ps_constants_data.clear();
+    vs_constants_dirty = true;
+    ps_constants_dirty = true;
+    current_vs_constants_offset = 0;
+    current_ps_constants_offset = 0;
   }
 };
 

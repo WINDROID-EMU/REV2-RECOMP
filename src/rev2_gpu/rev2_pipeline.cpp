@@ -81,14 +81,14 @@ bool PipelineManager::Initialize(rex::ui::vulkan::VulkanDevice* device) {
   set1_bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   set1_bindings[0].descriptorCount = 1;
   set1_bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-  // Binding 1: VS float constants
+  // Binding 1: VS float constants (Dynamic UBO per-draw)
   set1_bindings[1].binding = 1;
-  set1_bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  set1_bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
   set1_bindings[1].descriptorCount = 1;
   set1_bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  // Binding 2: PS float constants
+  // Binding 2: PS float constants (Dynamic UBO per-draw)
   set1_bindings[2].binding = 2;
-  set1_bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  set1_bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
   set1_bindings[2].descriptorCount = 1;
   set1_bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
   // Binding 3: bool/loop constants
@@ -151,19 +151,21 @@ bool PipelineManager::Initialize(rex::ui::vulkan::VulkanDevice* device) {
   }
 
   // 3. Cria Descriptor Pool
-  std::array<VkDescriptorPoolSize, 4> pool_sizes{};
+  std::array<VkDescriptorPoolSize, 5> pool_sizes{};
   pool_sizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  pool_sizes[0].descriptorCount = 16;
+  pool_sizes[0].descriptorCount = 32;
   pool_sizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  pool_sizes[1].descriptorCount = 64;
-  pool_sizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-  pool_sizes[2].descriptorCount = 64;
-  pool_sizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-  pool_sizes[3].descriptorCount = 64;
+  pool_sizes[1].descriptorCount = 128;
+  pool_sizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+  pool_sizes[2].descriptorCount = 128;
+  pool_sizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  pool_sizes[3].descriptorCount = 128;
+  pool_sizes[4].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+  pool_sizes[4].descriptorCount = 128;
 
   VkDescriptorPoolCreateInfo pool_ci{};
   pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  pool_ci.maxSets = 32;
+  pool_ci.maxSets = 64;
   pool_ci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
   pool_ci.pPoolSizes = pool_sizes.data();
   pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
