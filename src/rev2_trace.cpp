@@ -8,7 +8,7 @@ static constexpr uint32_t kBase = 0x834E0000, kEnd = 0x83520000;
 static std::atomic<uint32_t> g_hits[(kEnd - kBase) / 4];
 static std::atomic<uint32_t> g_swaps{0};
 
-extern "C" void Rev2TraceHit(uint32_t a) {
+extern "C" __attribute__((visibility("default"))) void Rev2TraceHit(uint32_t a) {
   if (a < kBase || a >= kEnd) return;
   g_hits[(a - kBase) >> 2].fetch_add(1, std::memory_order_relaxed);
   if (a == 0x834F3F80 && (g_swaps.fetch_add(1) % 300) == 299) {

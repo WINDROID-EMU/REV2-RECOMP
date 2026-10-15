@@ -429,12 +429,16 @@ VkPipeline PipelineManager::GetOrCreatePipeline(const PipelineKey& key, VkRender
   pipe_ci.subpass = 0;
 
   VkPipeline pipeline = VK_NULL_HANDLE;
-  if (dfn.vkCreateGraphicsPipelines(dev, VK_NULL_HANDLE, 1, &pipe_ci, nullptr, &pipeline) == VK_SUCCESS) {
+  VkResult res = dfn.vkCreateGraphicsPipelines(dev, VK_NULL_HANDLE, 1, &pipe_ci, nullptr, &pipeline);
+  if (res == VK_SUCCESS) {
     pipelines_[key] = pipeline;
     std::printf("[REV2_PIPELINE] Criado novo VkPipeline (VS: 0x%016lX, PS: 0x%016lX) -> %p\n",
                 (unsigned long)key.vs_hash, (unsigned long)key.ps_hash, (void*)pipeline);
     std::fflush(stdout);
     return pipeline;
+  } else {
+    std::fprintf(stderr, "[REV2_PIPELINE] vkCreateGraphicsPipelines falhou: res=%d (VS: 0x%016lX, PS: 0x%016lX, vs_mod=%p, ps_mod=%p)\n",
+                 res, (unsigned long)key.vs_hash, (unsigned long)key.ps_hash, (void*)vs_mod, (void*)ps_mod);
   }
 
   return VK_NULL_HANDLE;

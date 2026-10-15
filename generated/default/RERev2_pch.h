@@ -47,8 +47,14 @@ extern PPCFuncMapping PPCFuncMappings[];
 //=============================================================================
 // D3D Tracing
 //=============================================================================
-extern "C" void Rev2TraceHit(uint32_t addr);
-#define REV2_TRACE(addr) Rev2TraceHit(addr)
+#ifdef __cplusplus
+extern "C" {
+#endif
+__attribute__((weak)) void Rev2TraceHit(uint32_t addr);
+#ifdef __cplusplus
+}
+#endif
+#define REV2_TRACE(addr) do { if (Rev2TraceHit) Rev2TraceHit(addr); } while(0)
 
 //=============================================================================
 // Function Definition Macros

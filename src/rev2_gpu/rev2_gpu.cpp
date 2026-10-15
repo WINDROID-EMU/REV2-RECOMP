@@ -763,6 +763,7 @@ void OnPresent(uint32_t flags) {
               begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
               dfn.vkBeginCommandBuffer(s_clear_cmd_buf, &begin_info);
               std::fprintf(stderr, "[REV2_GPU] vkBeginCommandBuffer done, draws=%zu\n", ps.frame_draw_list.size());
+              VkFramebuffer fb_to_destroy = VK_NULL_HANDLE;
 
               // Transiciona a dummy texture para SHADER_READ_ONLY_OPTIMAL na primeira vez
               if (!s_dummy_layout_transitioned && s_dummy_image != VK_NULL_HANDLE) {
@@ -821,6 +822,7 @@ void OnPresent(uint32_t flags) {
 
                   VkFramebuffer fb = VK_NULL_HANDLE;
                   if (dfn.vkCreateFramebuffer(vk_dev->device(), &fb_ci, nullptr, &fb) == VK_SUCCESS) {
+                    fb_to_destroy = fb;
                     VkRenderPassBeginInfo rp_bi{};
                     rp_bi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
                     rp_bi.renderPass = rp;
@@ -883,20 +885,19 @@ void OnPresent(uint32_t flags) {
                         if (s_vk_vertex_buf != VK_NULL_HANDLE && cmd.vertex_data_size > 0) {
                           VkDeviceSize vtx_offset = cmd.vertex_data_offset;
                           dfn.vkCmdBindVertexBuffers(s_clear_cmd_buf, 0, 1, &s_vk_vertex_buf, &vtx_offset);
-                        }
 
-                        if (s_vk_index_buf != VK_NULL_HANDLE && cmd.index_count > 0 && cmd.index_data_size > 0) {
-                          dfn.vkCmdBindIndexBuffer(s_clear_cmd_buf, s_vk_index_buf, cmd.index_data_offset,
-                                                   (cmd.index_format == 0) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
-                          dfn.vkCmdDrawIndexed(s_clear_cmd_buf, cmd.index_count, cmd.instance_count, 0, cmd.base_vertex, cmd.first_instance);
-                        } else if (cmd.num_vertices > 0) {
-                          dfn.vkCmdDraw(s_clear_cmd_buf, cmd.num_vertices, cmd.instance_count, 0, cmd.first_instance);
+                          if (s_vk_index_buf != VK_NULL_HANDLE && cmd.index_count > 0 && cmd.index_data_size > 0) {
+                            dfn.vkCmdBindIndexBuffer(s_clear_cmd_buf, s_vk_index_buf, cmd.index_data_offset,
+                                                     (cmd.index_format == 0) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
+                            dfn.vkCmdDrawIndexed(s_clear_cmd_buf, cmd.index_count, cmd.instance_count, 0, cmd.base_vertex, cmd.first_instance);
+                          } else if (cmd.num_vertices > 0) {
+                            dfn.vkCmdDraw(s_clear_cmd_buf, cmd.num_vertices, cmd.instance_count, 0, cmd.first_instance);
+                          }
                         }
                       }
                     }
 
                     dfn.vkCmdEndRenderPass(s_clear_cmd_buf);
-                    dfn.vkDestroyFramebuffer(vk_dev->device(), fb, nullptr);
                   }
                 }
 
@@ -1000,6 +1001,9 @@ void OnPresent(uint32_t flags) {
               }
               dfn.vkWaitForFences(vk_dev->device(), 1, &s_clear_fence, VK_TRUE, UINT64_MAX);
               std::fprintf(stderr, "[REV2_GPU] refresher submitted and fence waited successfully!\n");
+              if (fb_to_destroy != VK_NULL_HANDLE) {
+                dfn.vkDestroyFramebuffer(vk_dev->device(), fb_to_destroy, nullptr);
+              }
 
               return true;
             }
@@ -1339,8 +1343,6 @@ void EmitVkDrawIndexed(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32
 void OnDrawPrimitive(uint32_t type, uint32_t start_vtx, uint32_t prim_count) {
   auto& ps = PipelineState::Instance();
   ps.stats.draw_primitive_calls.fetch_add(1, std::memory_order_relaxed);
-  // Emit non-indexed draw into the frame draw list
-  EmitVkDrawPrimitive(type, start_vtx, prim_count, nullptr);
 }
 
 void EmitVkDrawPrimitive(uint32_t type, uint32_t start_vtx, uint32_t prim_count, const uint8_t* base) {

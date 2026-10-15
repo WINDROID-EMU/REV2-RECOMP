@@ -46,12 +46,12 @@ extern "C" void sub_834F3F80(PPCContext& __restrict ctx, uint8_t* base) {
   rev2::gpu::OnPresent(ctx.r4.u32);
   if (base && device) {
     // Prevent the vsync lag spin-lock in loc_834F4684 (spins if 16968 - 16976 >= 15):
-    // Setting 16976 = submitted BEFORE __imp__ ensures the spin check (16968+1 - 16976) evaluates to 1 < 15!
     uint32_t submitted = *reinterpret_cast<uint32_t*>(base + device + 16968);
     *reinterpret_cast<uint32_t*>(base + device + 16976) = submitted;
   }
-  // Mantemos o avanço do dispositivo/swap D3D para que o loop da engine progrida os frames
+  std::fprintf(stderr, "[REV2_HOOKS] sub_834F3F80: chamando __imp__ (device=0x%08X)...\n", device);
   __imp__sub_834F3F80(ctx, base);
+  std::fprintf(stderr, "[REV2_HOOKS] sub_834F3F80: __imp__ retornou com sucesso!\n");
   if (base && device) {
     uint32_t submitted = *reinterpret_cast<uint32_t*>(base + device + 16968);
     *reinterpret_cast<uint32_t*>(base + device + 16976) = submitted;
@@ -177,6 +177,7 @@ extern "C" void sub_83503040(PPCContext& __restrict ctx, uint8_t* base) {
 // 18. DrawPrimitive (0x834ECC48)
 extern "C" void sub_834ECC48(PPCContext& __restrict ctx, uint8_t* base) {
   rev2::gpu::OnDrawPrimitive(ctx.r4.u32, ctx.r5.u32, ctx.r6.u32);
+  rev2::gpu::EmitVkDrawPrimitive(ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, base);
   __imp__sub_834ECC48(ctx, base);
 }
 

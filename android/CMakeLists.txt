@@ -67,6 +67,11 @@ set(REREV2_ANDROID_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/main/cpp/input/android_input_driver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/main/cpp/input/touch_overlay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/main/cpp/vfs/android_storage.cpp
+    ${ROOT_DIR}/src/rev2_hooks.cpp
+    ${ROOT_DIR}/src/rev2_trace.cpp
+    ${ROOT_DIR}/src/rev2_gpu/rev2_gpu.cpp
+    ${ROOT_DIR}/src/rev2_gpu/rev2_shaders.cpp
+    ${ROOT_DIR}/src/rev2_gpu/rev2_pipeline.cpp
     ${GENERATED_SOURCES}
 )
 
@@ -116,6 +121,7 @@ target_link_libraries(RERev2 PRIVATE
     aaudio
     vulkan
     OpenSLES
+    dl
 )
 
 # ── libadrenotools shared output ──────────────────────────────────────────────

@@ -1,4 +1,5 @@
 #include "rev2_shaders.h"
+#include "rev2_dispatch.h"
 
 #include <fstream>
 #include <iostream>
@@ -94,14 +95,13 @@ VkShaderModule ShaderManager::GetOrCreateModule(VkDevice device, uint64_t ucode_
   create_info.codeSize = s.spirv.size() * sizeof(uint32_t);
   create_info.pCode = s.spirv.data();
 
-  // Criação do ShaderModule Vulkan diretamente
-  // Obter ponteiro vkCreateShaderModule ou via carregador de device
   VkShaderModule module = VK_NULL_HANDLE;
-  // vkCreateShaderModule é despachado via API Vulkan
-  PFN_vkCreateShaderModule pfn_vkCreateShaderModule = 
-      reinterpret_cast<PFN_vkCreateShaderModule>(dlsym(RTLD_DEFAULT, "vkCreateShaderModule"));
-  if (pfn_vkCreateShaderModule) {
-    if (pfn_vkCreateShaderModule(device, &create_info, nullptr, &module) == VK_SUCCESS) {
+  auto& dfn = GetVulkanDispatch();
+  if (!dfn.initialized) {
+    dfn.Load(device);
+  }
+  if (dfn.vkCreateShaderModule) {
+    if (dfn.vkCreateShaderModule(device, &create_info, nullptr, &module) == VK_SUCCESS) {
       s.module = module;
       return module;
     }
@@ -183,10 +183,15 @@ VkShaderModule ShaderManager::GetFallbackVertexModule(VkDevice device) {
   create_info.codeSize = sizeof(kFallbackVertexSpv);
   create_info.pCode = kFallbackVertexSpv;
 
-  PFN_vkCreateShaderModule pfn = reinterpret_cast<PFN_vkCreateShaderModule>(dlsym(RTLD_DEFAULT, "vkCreateShaderModule"));
-  if (pfn && pfn(device, &create_info, nullptr, &fallback_vs_) == VK_SUCCESS) {
+  auto& dfn = GetVulkanDispatch();
+  if (!dfn.initialized) {
+    dfn.Load(device);
+  }
+  if (dfn.vkCreateShaderModule && dfn.vkCreateShaderModule(device, &create_info, nullptr, &fallback_vs_) == VK_SUCCESS) {
+    std::fprintf(stderr, "[REV2_SHADERS] Fallback Vertex Shader criado com sucesso! module=%p\n", (void*)fallback_vs_);
     return fallback_vs_;
   }
+  std::fprintf(stderr, "[REV2_SHADERS] Falha ao criar Fallback Vertex Shader!\n");
   return VK_NULL_HANDLE;
 }
 
@@ -199,10 +204,15 @@ VkShaderModule ShaderManager::GetFallbackPixelModule(VkDevice device) {
   create_info.codeSize = sizeof(kFallbackPixelSpv);
   create_info.pCode = kFallbackPixelSpv;
 
-  PFN_vkCreateShaderModule pfn = reinterpret_cast<PFN_vkCreateShaderModule>(dlsym(RTLD_DEFAULT, "vkCreateShaderModule"));
-  if (pfn && pfn(device, &create_info, nullptr, &fallback_ps_) == VK_SUCCESS) {
+  auto& dfn = GetVulkanDispatch();
+  if (!dfn.initialized) {
+    dfn.Load(device);
+  }
+  if (dfn.vkCreateShaderModule && dfn.vkCreateShaderModule(device, &create_info, nullptr, &fallback_ps_) == VK_SUCCESS) {
+    std::fprintf(stderr, "[REV2_SHADERS] Fallback Pixel Shader criado com sucesso! module=%p\n", (void*)fallback_ps_);
     return fallback_ps_;
   }
+  std::fprintf(stderr, "[REV2_SHADERS] Falha ao criar Fallback Pixel Shader!\n");
   return VK_NULL_HANDLE;
 }
 

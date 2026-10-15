@@ -62,6 +62,7 @@ export DISPLAY="${DISPLAY:-:0}"
 export SDL_AUDIO_DEVICE_SAMPLE_FRAMES="${SDL_AUDIO_DEVICE_SAMPLE_FRAMES:-2048}"
 
 mkdir -p "${SCRIPT_DIR}/cache/shaders/shareable" "${SCRIPT_DIR}/user_data"
+rm -f /dev/shm/xenia_memory_* 2>/dev/null || true
 
 # Garante que os shaders pré-compilados do jogo estejam no cache do desktop
 if [[ -d "${SCRIPT_DIR}/android/app/src/main/assets/shaders/shareable" ]]; then
