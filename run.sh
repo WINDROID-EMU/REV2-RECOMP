@@ -93,7 +93,7 @@ if [[ "$*" != *"--async_shader_compilation"* ]]; then
     ARGS+=(--async_shader_compilation "true")
 fi
 if [[ "$*" != *"--log_level"* ]]; then
-    ARGS+=(--log_level "warning")
+    ARGS+=(--log_level "warn")
 fi
 if [[ "$*" != *"--log_noisy"* ]]; then
     ARGS+=(--log_noisy "false")

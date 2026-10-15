@@ -1,6 +1,6 @@
 # ==============================================================================
-# Resident Evil: Revelations 2 - Configuração de Alta Performance (Linux x86_64)
-# Otimizado para NVIDIA GeForce GTX 1050 Ti / AMD Ryzen
+# Resident Evil: Revelations 2 - Modo de Desempenho Extremo (Ultra Performance)
+# Otimizado para máxima taxa de quadros (FPS) e mínima latência de GPU/CPU
 # ==============================================================================
 
 # Caminhos de Dados e Cache
@@ -8,41 +8,64 @@ game_data_root = "/media/amd/SSD KING/X360/revelatin 2/extracted"
 user_data_root = "/media/amd/SSD KING/X360/revelatin 2/recomp_project/user_data"
 cache_root = "/media/amd/SSD KING/X360/revelatin 2/recomp_project/cache"
 
-# --- Plugin Gráfico & Vulkan Backend ---
+# --- Resolução e Renderização Interna (540p) ---
+# Reduz a contagem de pixels em mais de 44%, aliviando drasticamente a GPU
+resolution = "540p"
+resolution_scale = 1
+draw_resolution_scale_x = 1
+draw_resolution_scale_y = 1
+video_mode_width = 960
+video_mode_height = 540
+fullscreen = false
+vsync = false
+
+# --- Desativação de Sombras, Oclusão e Iluminação Pesada ---
+# Desativa consultas de oclusão síncronas entre GPU e CPU (evita gargalos de renderização de sombras)
+occlusion_query_enable = false
+query_occlusion_fake_sample_count = 1000
+
+# Desativa readback síncrono de bloom, pós-processamento pesado e HDR
+readback_resolve = "none"
+readback_memexport = false
+readback_memexport_fast = false
+
+# Desativa anti-aliasing de hardware de 2 passagens
+native_2x_msaa = false
+
+# Otimização de eDRAM: restringe cópias aos render targets estritamente necessários
+mrt_edram_used_range_clamp_to_min = true
+
+# --- Texturas e Largura de Banda de VRAM ---
+# Desativa filtragem anisotrópica (reduz leituras de textura e uso de barramento)
+anisotropic_override = 1
+texture_cache_memory_limit_soft = 512
+texture_cache_memory_limit_hard = 1024
+texture_cache_memory_limit_render_to_texture = 16
+gpu_3d_to_2d_texture = true
+
+# --- Backend Vulkan & Eliminação de Stutters ---
 gpu_plugin = "xenos"
 gpu_backend = "vulkan"
 render_target_path_vulkan = "fbo"
-
-# --- Eliminação de Micro-travamentos (Shaders & Pipelines) ---
+vulkan_dynamic_rendering = false
 vulkan_async_skip_incomplete_frames = true
 async_shader_compilation = true
 vulkan_pipeline_creation_threads = 6
-vulkan_dynamic_rendering = false
+vulkan_validation_enabled = false
+vulkan_log_debug_messages = false
+gpu_allow_invalid_fetch_constants = true
+primitive_processor_cache_min_indices = -1
 
-# --- Remoção de Efeitos Pesados de Pós-processamento ---
-readback_resolve = "none"
-mrt_edram_used_range_clamp_to_min = true
-native_2x_msaa = false
-
-# --- Texturas e VRAM (Otimizado para os 4GB da GTX 1050 Ti) ---
-texture_cache_memory_limit_soft = 1024
-texture_cache_memory_limit_hard = 2048
-gpu_3d_to_2d_texture = true
-
-# --- Vídeo e Resolução ---
-resolution = "720p"
-resolution_scale = 1
-vsync = true
-fullscreen = false
-present_effect = "bilinear"
-anisotropic_override = 2
-
-# --- Otimizações de CPU e Sistema ---
-protect_zero = false
+# --- Otimização de CPU & Agendamento Linux Multicore ---
+# Permite que o kernel Linux espalhe as threads do jogo por todos os núcleos reais da CPU
+ignore_thread_priorities = true
+ignore_thread_affinities = true
 direct_host_resolve = true
 clear_memory_page_state = false
+protect_zero = false
 
-# --- Logs Silenciosos (Elimina Gargalo de I/O em tempo de execução) ---
-log_level = "warning"
+# --- Logs Silenciosos (Zero Latência de Terminal I/O) ---
+log_level = "warn"
 log_noisy = false
 log_verbose = false
+log_file = ""
