@@ -116,7 +116,8 @@ extern "C" void sub_834EADD8(PPCContext& __restrict ctx, uint8_t* base) {
 
 // 9. DrawIndexedPrimitive (0x834E5060)
 extern "C" void sub_834E5060(PPCContext& __restrict ctx, uint8_t* base) {
-  rev2::gpu::OnDrawIndexedPrimitive(ctx.r4.u32, ctx.r5.s32, ctx.r6.u32, ctx.r7.u32, 0, 0);
+  rev2::gpu::OnDrawIndexedPrimitive(ctx.r4.u32, ctx.r5.s32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32, ctx.r9.u32);
+  rev2::gpu::EmitVkDrawIndexed(ctx.r4.u32, ctx.r5.s32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32, ctx.r9.u32);
   if (rev2::gpu::PipelineState::Instance().fallback_to_xenos) {
     __imp__sub_834E5060(ctx, base);
   } else {

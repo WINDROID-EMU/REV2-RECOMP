@@ -28,6 +28,7 @@ void OnSetIndices(uint32_t idx_buf_addr);
 void OnSetVertexDeclaration(uint32_t decl_addr);
 
 void OnDrawIndexedPrimitive(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32_t num_vtx, uint32_t start_idx, uint32_t prim_count);
+void EmitVkDrawIndexed(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32_t num_vtx, uint32_t start_idx, uint32_t prim_count);
 void OnDrawPrimitive(uint32_t type, uint32_t start_vtx, uint32_t prim_count);
 
 void OnResolve(uint32_t flags, uint32_t src_surface, uint32_t dst_texture);

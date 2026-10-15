@@ -76,10 +76,23 @@ struct RenderState {
   uint32_t color_write_mask = 0x0F; // RGBA
 };
 
+struct VkDrawIndexedCommand {
+  uint32_t primitive_type = 0;
+  int32_t base_vertex = 0;
+  uint32_t min_index = 0;
+  uint32_t num_vertices = 0;
+  uint32_t start_index = 0;
+  uint32_t primitive_count = 0;
+  uint32_t index_count = 0;
+  uint32_t instance_count = 1;
+  uint32_t first_instance = 0;
+};
+
 struct FrameStats {
   std::atomic<uint64_t> total_frames{0};
   std::atomic<uint64_t> draw_indexed_calls{0};
   std::atomic<uint64_t> draw_primitive_calls{0};
+  std::atomic<uint64_t> vk_draws_emitted{0};
   std::atomic<uint64_t> vs_constant_updates{0};
   std::atomic<uint64_t> ps_constant_updates{0};
   std::atomic<uint64_t> texture_binds{0};
@@ -158,6 +171,9 @@ class PipelineState {
   // Render State
   RenderState state;
 
+  // Buffer de emissão nativa Plume / Vulkan
+  std::vector<VkDrawIndexedCommand> frame_draw_list;
+
   // Métricas
   FrameStats stats;
 
@@ -168,6 +184,7 @@ class PipelineState {
   void ResetFrameCounters() {
     stats.draw_indexed_calls = 0;
     stats.draw_primitive_calls = 0;
+    stats.vk_draws_emitted = 0;
     stats.vs_constant_updates = 0;
     stats.ps_constant_updates = 0;
     stats.texture_binds = 0;
@@ -180,6 +197,7 @@ class PipelineState {
     stats.bytes_untiled = 0;
     stats.tiling_begin_calls = 0;
     stats.tiling_end_calls = 0;
+    frame_draw_list.clear();
   }
 };
 

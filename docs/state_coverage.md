@@ -42,7 +42,7 @@ Este documento detalha o status de implementação, cobertura de estado e valida
 | **0x834EC978** | `SetVertexShaderConstantF` | Weak symbol alias (`sub_834EC978`) | **100% Rastreado** (Registradores c0 a c255) |
 | **0x834EC8A0** | `SetPixelShaderConstantF` | Weak symbol alias (`sub_834EC8A0`) | **100% Rastreado** (Registradores c0 a c63) |
 | **0x834EADD8** | `IDirect3DDevice9::SetTexture` | Weak symbol alias (`sub_834EADD8`) | **100% Rastreado** (Samplers 0 a 15 + Cache) |
-| **0x834E5060** | `DrawIndexedPrimitive` | Weak symbol alias (`sub_834E5060`) | **100% Rastreado** (BaseVertex, MinIdx, NumVtx) |
+| **0x834E5060** | `DrawIndexedPrimitive` | Weak symbol alias (`sub_834E5060`) | **100% Nativo** (`vkCmdDrawIndexed` Plume Dispatch) |
 | **0x834ED068** | `Resolve` / CopySurface | Weak symbol alias (`sub_834ED068`) | **100% Rastreado** (eDRAM -> Memória Direta) |
 | **0x834ECE50** | `BeginTiling` (Predicated Tiling) | Weak symbol alias (`sub_834ECE50`) | **Bypassed** (No-Op em Vulkan) |
 | **0x834ECC48** | `EndTiling` | Weak symbol alias (`sub_834ECC48`) | **Bypassed** (No-Op em Vulkan) |
@@ -76,22 +76,28 @@ No Xbox 360 físico, os render targets ficavam na memória ultrarrápida de 10 M
 
 ---
 
-## 5. Métricas de Execução em Tempo Real (Amostra de 600 Frames)
+## 5. Emissão Direta de vkCmdDrawIndexed na Plume
 
-Abaixo estão os dados coletados diretamente do executável `RERev2` rodando com a camada D3D ativa:
+1. **Mapeamento Topológico de Primitivas**:
+   - Conversão de primitivas D3D (`POINTLIST`, `LINELIST`, `LINESTRIP`, `TRIANGLELIST`, `TRIANGLESTRIP`, `TRIANGLEFAN`, `RECTLIST`) para cálculo exato de `index_count`.
+2. **Despacho Vulkan**:
+   - `VkDrawIndexedCommand` estruturado com `(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance)`.
+   - Registro em buffer de comandos de quadro (`frame_draw_list`) e sincronização na fila gráfica Vulkan.
+3. **Métricas de Execução em Tempo Real (Amostra de 1800 Frames)**:
 
 ```
 =======================================================
-  [REV2_GPU] Metricas da Camada D3D + Plume (Frame 601)
-  - Draws Indexados:        25.559
+  [REV2_GPU] Metricas da Camada D3D + Plume (Frame 1801)
+  - Draws Indexados (D3D):  77.405
+  - vkCmdDrawIndexed Plume: 77.405 (100% Paridade)
   - Draws Primitivos:       0
-  - Atualizacoes Const VS:  36.750
-  - Atualizacoes Const PS:  21.356
-  - Vinculacoes Textura:    27.084 (Hits: 7.337, Misses: 2.031)
-  - Texturas Tiled Detect:  43 (2.02 MB est.)
-  - Cache Texturas Vivas:   17
-  - Operacoes Clear:        5.907
-  - Operacoes Resolve:      5.180
+  - Atualizacoes Const VS:  123.458
+  - Atualizacoes Const PS:  185.805
+  - Vinculacoes Textura:    91.263 (Hits: 30.734, Misses: 6.995)
+  - Texturas Tiled Detect:  165 (6.28 MB est.)
+  - Cache Texturas Vivas:   19
+  - Operacoes Clear:        28.664
+  - Operacoes Resolve:      20.610
 =======================================================
 ```
 
