@@ -12,9 +12,10 @@ Mapeamento da região D3D (0x834E0000 - 0x83520000) obtido por tracing em tempo 
 | **0x834EC8A0** | 47.313 | `SetPixelShaderConstantF` | r3: Device, r4: StartReg, r5: pData, r6: Count | Multiplica `(r4 + 120)` por 16 bytes (`sizeof(float4)`), copia constantes do pixel shader. |
 | **0x83502F90** | 36.542 | `SetRenderState` (Rasterizer/Blend/Depth) | r3: Device, r4: State, r5: Value | Atualiza o estado em cache no device e enfileira dword de estado no ring buffer. |
 | **0x834E5060** | 34.500 | `DrawIndexedPrimitive` | r3: Device, r4: PrimType, r5: BaseVtx, r6: MinIdx, r7: NumVtx | Função primária de desenho indexado; valida bounds e grava pacote de draw PM4. |
-| **0x835023E8** | 34.497 | `SetStreamSource` | r3: Device, r4: Stream, r5: VtxBuf, r6: Offset, r7: Stride | Vincula vertex buffer, offset e stride de vértices para os draws subsequentes. |
-| **0x834F4980** | 31.220 | `SetPixelShader` / `SetVertexShader` | r3: Device, r4: ShaderPtr | Armazena o ponteiro do shader no device (`offset 13084/13092`) e atualiza dirty flags. |
+| **0x834F4980** | 31.220 | `SetVertexShader` | r3: Device, r4: ShaderPtr | Armazena o ponteiro do vertex shader no device (`offset 13084`) e emite PM4 packet. |
+| **0x834F4AF0** | 28.450 | `SetPixelShader` | r3: Device, r4: ShaderPtr | Armazena o ponteiro do pixel shader no device (`offset 13088/13092`) e atualiza dirty flags. |
 | **0x834E8E80** | 24.600 | `SetSamplerState` | r3: Device, r4: Sampler, r5: Type, r6: Value | Configura filtragem (min/mag/mip), endereçamento (clamp/wrap) e LOD bias. |
+| **0x835023E8** | 24.200 | `SetStreamSource` | r3: Device, r4: Stream, r5: BufAddr, r6: Offset, r7: Stride | Vincula vertex buffer, offset e stride de fluxo de vértice. |
 | **0x834E7708** | 23.949 | `SetIndices` | r3: Device, r4: IndexBufferPtr | Configura o ponteiro do index buffer e endianness para `DrawIndexedPrimitive`. |
 | **0x83503180** | 22.068 | `SetVertexDeclaration` | r3: Device, r4: VtxDeclPtr | Especifica o layout dos atributos de vértice (pos, norm, uv, color). |
 | **0x83502290** | 21.777 | `SetViewport` | r3: Device, r4: pViewport | Viewport x, y, width, height, minZ, maxZ traduzidos para registradores Xenos. |

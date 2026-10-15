@@ -9,6 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build-arm64"
 ARM64_SDK="${ROOT_DIR}/linux-arm64"
+if [[ ! -d "${ARM64_SDK}" ]]; then
+    ARM64_SDK="${SCRIPT_DIR}/android/rexglue-sdk"
+fi
 RUNTIME_DIR="${SCRIPT_DIR}/runtime/linux-arm64"
 
 echo "=== Configurando compilação ARM64 (aarch64) ==="

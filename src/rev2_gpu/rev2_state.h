@@ -74,6 +74,10 @@ struct RenderState {
 
   uint32_t cull_mode = 3; // D3DCULL_CCW
   uint32_t color_write_mask = 0x0F; // RGBA
+
+  bool alpha_test_enable = false;
+  uint32_t alpha_ref = 0;
+  uint32_t alpha_func = 8; // D3DCMP_ALWAYS
 };
 
 struct VkDrawIndexedCommand {
@@ -86,6 +90,19 @@ struct VkDrawIndexedCommand {
   uint32_t index_count = 0;
   uint32_t instance_count = 1;
   uint32_t first_instance = 0;
+
+  // Offsets e metadados no buffer de geometria do quadro
+  uint32_t index_data_offset = 0;
+  uint32_t index_data_size = 0;
+  uint32_t index_format = 0; // 0 = 16-bit, 1 = 32-bit
+  uint32_t vertex_data_offset = 0;
+  uint32_t vertex_data_size = 0;
+  uint32_t vertex_stride = 32;
+
+  // Snapshot de estado do pipeline para este draw
+  uint32_t vs_handle = 0;
+  uint32_t ps_handle = 0;
+  RenderState state;
 };
 
 struct FrameStats {
@@ -114,6 +131,11 @@ struct FrameStats {
   std::atomic<uint64_t> stream_source_changes{0};
   std::atomic<uint64_t> indices_changes{0};
   std::atomic<uint64_t> vertex_decl_changes{0};
+  std::atomic<uint64_t> blend_state_changes{0};
+  std::atomic<uint64_t> depth_stencil_state_changes{0};
+  std::atomic<uint64_t> alpha_test_state_changes{0};
+  std::atomic<uint64_t> color_write_mask_changes{0};
+  std::atomic<uint64_t> resolve_parameter_changes{0};
 };
 
 struct CachedTexture {
@@ -171,8 +193,21 @@ class PipelineState {
   // Render State
   RenderState state;
 
+  // Clear State
+  struct ClearState {
+    uint32_t flags = 0;
+    uint32_t color = 0xFF000000;
+    float z = 1.0f;
+    uint32_t stencil = 0;
+    bool pending = false;
+  } clear_state;
+
   // Buffer de emissão nativa Plume / Vulkan
   std::vector<VkDrawIndexedCommand> frame_draw_list;
+
+  // Buffers de geometria dinâmica acumulados no quadro
+  std::vector<uint8_t> frame_index_data;
+  std::vector<uint8_t> frame_vertex_data;
 
   // Métricas
   FrameStats stats;
@@ -197,7 +232,18 @@ class PipelineState {
     stats.bytes_untiled = 0;
     stats.tiling_begin_calls = 0;
     stats.tiling_end_calls = 0;
+    stats.sampler_state_changes = 0;
+    stats.stream_source_changes = 0;
+    stats.indices_changes = 0;
+    stats.vertex_decl_changes = 0;
+    stats.blend_state_changes = 0;
+    stats.depth_stencil_state_changes = 0;
+    stats.alpha_test_state_changes = 0;
+    stats.color_write_mask_changes = 0;
+    stats.resolve_parameter_changes = 0;
     frame_draw_list.clear();
+    frame_index_data.clear();
+    frame_vertex_data.clear();
   }
 };
 

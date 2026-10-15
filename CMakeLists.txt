@@ -28,6 +28,8 @@ set(REREV2_SOURCES
     src/rev2_hooks.cpp
     src/rev2_trace.cpp
     src/rev2_gpu/rev2_gpu.cpp
+    src/rev2_gpu/rev2_shaders.cpp
+    src/rev2_gpu/rev2_pipeline.cpp
 )
 
 if(WIN32)
@@ -37,3 +39,4 @@ else()
 endif()
 
 rexglue_setup_target(RERev2 GPU_PLUGINS xenos)
+target_include_directories(RERev2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/android/rexglue-sdk/include/renderdoc")
