@@ -1563,11 +1563,11 @@ void OnSetStreamSource(uint32_t stream, uint32_t buf_addr, uint32_t offset, uint
   auto& ps = PipelineState::Instance();
   ps.stats.stream_source_changes.fetch_add(1, std::memory_order_relaxed);
   uint32_t real_buf_addr = buf_addr;
-  if (base && buf_addr >= 0x80000000) {
+  if (base && buf_addr >= 0x10000000) {
     // No X360 D3DVertexBuffer, offset +24 guarda o endereco real dos dados em memoria guest/fisica
     uint32_t ptr_in_obj = *reinterpret_cast<const uint32_t*>(base + buf_addr + 24);
     ptr_in_obj = __builtin_bswap32(ptr_in_obj);
-    if (ptr_in_obj > 0 && ptr_in_obj < 0x20000000) {
+    if (ptr_in_obj > 0 && ptr_in_obj < 0x80000000) {
       real_buf_addr = ptr_in_obj;
     }
   }
@@ -1580,11 +1580,11 @@ void OnSetIndices(uint32_t idx_buf_addr, const uint8_t* base) {
   auto& ps = PipelineState::Instance();
   ps.stats.indices_changes.fetch_add(1, std::memory_order_relaxed);
   uint32_t real_idx_addr = idx_buf_addr;
-  if (base && idx_buf_addr >= 0x80000000) {
+  if (base && idx_buf_addr >= 0x10000000) {
     // No X360 D3DIndexBuffer, offset +24 guarda o endereco real dos dados em memoria guest/fisica
     uint32_t ptr_in_obj = *reinterpret_cast<const uint32_t*>(base + idx_buf_addr + 24);
     ptr_in_obj = __builtin_bswap32(ptr_in_obj);
-    if (ptr_in_obj > 0 && ptr_in_obj < 0x20000000) {
+    if (ptr_in_obj > 0 && ptr_in_obj < 0x80000000) {
       real_idx_addr = ptr_in_obj;
     }
   }

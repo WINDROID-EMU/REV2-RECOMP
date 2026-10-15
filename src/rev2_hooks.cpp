@@ -15,6 +15,7 @@ extern "C" void __imp__sub_834EC8A0(PPCContext& __restrict ctx, uint8_t* base);
 extern "C" void __imp__sub_834EADD8(PPCContext& __restrict ctx, uint8_t* base);
 extern "C" void __imp__sub_834E5060(PPCContext& __restrict ctx, uint8_t* base);
 extern "C" void __imp__sub_834ED068(PPCContext& __restrict ctx, uint8_t* base);
+extern "C" void __imp__sub_834E8050(PPCContext& __restrict ctx, uint8_t* base);
 extern "C" void __imp__sub_835023E8(PPCContext& __restrict ctx, uint8_t* base);
 extern "C" void __imp__sub_834E7708(PPCContext& __restrict ctx, uint8_t* base);
 extern "C" void __imp__sub_83503180(PPCContext& __restrict ctx, uint8_t* base);
@@ -123,9 +124,14 @@ extern "C" void sub_834ED068(PPCContext& __restrict ctx, uint8_t* base) {
   __imp__sub_834ED068(ctx, base);
 }
 
-// 11. SetStreamSource (0x835023E8)
-extern "C" void sub_835023E8(PPCContext& __restrict ctx, uint8_t* base) {
+// 11. SetStreamSource (0x834E8050) - Real D3D SetStreamSource
+extern "C" void sub_834E8050(PPCContext& __restrict ctx, uint8_t* base) {
   rev2::gpu::OnSetStreamSource(ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, base);
+  __imp__sub_834E8050(ctx, base);
+}
+
+// 11b. Legacy/Secondary Stream Flush (0x835023E8)
+extern "C" void sub_835023E8(PPCContext& __restrict ctx, uint8_t* base) {
   __imp__sub_835023E8(ctx, base);
 }
 
