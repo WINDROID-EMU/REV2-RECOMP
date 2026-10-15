@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <rex/ui/vulkan/api.h>
 
 namespace rev2::gpu {
 
@@ -60,6 +61,7 @@ struct SamplerBinding {
   uint32_t address_u = 0;
   uint32_t address_v = 0;
   uint32_t address_w = 0;
+  VkSampler vk_sampler = VK_NULL_HANDLE;
 };
 
 struct RenderState {
@@ -148,6 +150,10 @@ struct CachedTexture {
   uint32_t data_size = 0;
   uint64_t last_frame_used = 0;
   std::vector<uint8_t> data;
+  VkImage vk_image = VK_NULL_HANDLE;
+  VkDeviceMemory vk_mem = VK_NULL_HANDLE;
+  VkImageView vk_view = VK_NULL_HANDLE;
+  VkFormat vk_format = VK_FORMAT_UNDEFINED;
 };
 
 class PipelineState {

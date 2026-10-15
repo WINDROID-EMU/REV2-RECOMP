@@ -78,7 +78,8 @@ static uint32_t FindMemoryType(rex::ui::vulkan::VulkanDevice* vk_dev, uint32_t t
   if (!vk_dev) return 0;
   auto& dfn = GetVulkanDispatch();
 
-  VkPhysicalDevice phys = *reinterpret_cast<VkPhysicalDevice*>(reinterpret_cast<uint8_t*>(vk_dev) + 8);
+  // Use the public physical_device() API to avoid brittle offset hacks
+  VkPhysicalDevice phys = vk_dev->physical_device();
   std::fprintf(stderr, "[REV2_GPU] FindMemoryType: vk_dev=%p, phys=%p, filter=0x%x, props=0x%x\n",
                (void*)vk_dev, (void*)phys, type_filter, properties);
 
@@ -249,6 +250,273 @@ static bool EnsureVulkanClearContext(rex::ui::vulkan::VulkanDevice* vk_dev) {
   return true;
 }
 
+static VkImage s_dummy_image = VK_NULL_HANDLE;
+static VkDeviceMemory s_dummy_mem = VK_NULL_HANDLE;
+static VkImageView s_dummy_view = VK_NULL_HANDLE;
+static VkSampler s_default_sampler = VK_NULL_HANDLE;
+
+static VkFormat MapXenosFormatToVkFormat(uint32_t xenos_format) {
+  switch (xenos_format) {
+    case 2:  return VK_FORMAT_R8_UNORM;
+    case 3:  return VK_FORMAT_A1R5G5B5_UNORM_PACK16;
+    case 4:  return VK_FORMAT_R5G6B5_UNORM_PACK16;
+    case 6:  return VK_FORMAT_R8G8B8A8_UNORM;
+    case 7:  return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    case 8:  return VK_FORMAT_R8_UNORM;
+    case 10: return VK_FORMAT_R8G8_UNORM;
+    case 14: return VK_FORMAT_R8G8B8A8_UNORM;
+    case 15: return VK_FORMAT_R4G4B4A4_UNORM_PACK16;
+    case 18: return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    case 19: return VK_FORMAT_BC2_UNORM_BLOCK;
+    case 20: return VK_FORMAT_BC3_UNORM_BLOCK;
+    case 24: return VK_FORMAT_R16_UNORM;
+    case 25: return VK_FORMAT_R16G16_UNORM;
+    case 26: return VK_FORMAT_R16G16B16A16_UNORM;
+    case 31:
+    case 37: return VK_FORMAT_BC5_UNORM_BLOCK;
+    default: return VK_FORMAT_R8G8B8A8_UNORM;
+  }
+}
+
+// Transitions the dummy image to SHADER_READ_ONLY using the clear command buffer
+static void TransitionDummyImageToShaderRead(VkCommandBuffer cmd) {
+  auto& dfn = GetVulkanDispatch();
+  VkImageMemoryBarrier barrier{};
+  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  barrier.srcAccessMask = 0;
+  barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.image = s_dummy_image;
+  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  barrier.subresourceRange.baseMipLevel = 0;
+  barrier.subresourceRange.levelCount = 1;
+  barrier.subresourceRange.baseArrayLayer = 0;
+  barrier.subresourceRange.layerCount = 1;
+  dfn.vkCmdPipelineBarrier(cmd,
+      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+      0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+static bool s_dummy_layout_transitioned = false;
+
+static bool EnsureDummyTexture(rex::ui::vulkan::VulkanDevice* vk_dev) {
+  if (s_dummy_view != VK_NULL_HANDLE && s_default_sampler != VK_NULL_HANDLE) {
+    return true;
+  }
+  if (!vk_dev) return false;
+  VkDevice dev = vk_dev->device();
+  auto& dfn = GetVulkanDispatch();
+
+  if (s_default_sampler == VK_NULL_HANDLE) {
+    VkSamplerCreateInfo sampler_ci{};
+    sampler_ci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_ci.magFilter = VK_FILTER_LINEAR;
+    sampler_ci.minFilter = VK_FILTER_LINEAR;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_ci.maxAnisotropy = 1.0f;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = VK_LOD_CLAMP_NONE;
+    dfn.vkCreateSampler(dev, &sampler_ci, nullptr, &s_default_sampler);
+  }
+
+  if (s_dummy_view != VK_NULL_HANDLE) return true;
+
+  VkImageCreateInfo img_ci{};
+  img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  img_ci.imageType = VK_IMAGE_TYPE_2D;
+  img_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+  img_ci.extent = {1, 1, 1};
+  img_ci.mipLevels = 1;
+  img_ci.arrayLayers = 1;
+  img_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+  img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+  img_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  img_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+  if (dfn.vkCreateImage(dev, &img_ci, nullptr, &s_dummy_image) != VK_SUCCESS) {
+    return false;
+  }
+
+  VkMemoryRequirements mem_reqs{};
+  dfn.vkGetImageMemoryRequirements(dev, s_dummy_image, &mem_reqs);
+  uint32_t mem_type = FindMemoryType(vk_dev, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+  VkMemoryAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  alloc_info.allocationSize = mem_reqs.size;
+  alloc_info.memoryTypeIndex = mem_type;
+
+  if (dfn.vkAllocateMemory(dev, &alloc_info, nullptr, &s_dummy_mem) != VK_SUCCESS) {
+    return false;
+  }
+
+  dfn.vkBindImageMemory(dev, s_dummy_image, s_dummy_mem, 0);
+
+  VkImageViewCreateInfo view_ci{};
+  view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  view_ci.image = s_dummy_image;
+  view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+  view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  view_ci.subresourceRange.baseMipLevel = 0;
+  view_ci.subresourceRange.levelCount = 1;
+  view_ci.subresourceRange.baseArrayLayer = 0;
+  view_ci.subresourceRange.layerCount = 1;
+
+  if (dfn.vkCreateImageView(dev, &view_ci, nullptr, &s_dummy_view) != VK_SUCCESS) {
+    return false;
+  }
+
+  s_dummy_layout_transitioned = false; // needs transition in next command buffer
+  return true;
+}
+
+// Per-texture staging buffers to avoid aliasing multiple uploads in one command buffer
+struct StagingBuffer {
+  VkBuffer buf = VK_NULL_HANDLE;
+  VkDeviceMemory mem = VK_NULL_HANDLE;
+  size_t cap = 0;
+};
+static std::vector<StagingBuffer> s_tex_staging_pool;
+static size_t s_tex_staging_pool_used = 0;
+
+static StagingBuffer& AcquireStagingBuffer(rex::ui::vulkan::VulkanDevice* vk_dev, size_t required) {
+  if (s_tex_staging_pool_used < s_tex_staging_pool.size()) {
+    StagingBuffer& sb = s_tex_staging_pool[s_tex_staging_pool_used++];
+    EnsureBuffer(vk_dev, sb.buf, sb.mem, sb.cap, required, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    return sb;
+  }
+  s_tex_staging_pool.push_back({});
+  StagingBuffer& sb = s_tex_staging_pool.back();
+  EnsureBuffer(vk_dev, sb.buf, sb.mem, sb.cap, required, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+  s_tex_staging_pool_used++;
+  return sb;
+}
+
+static bool UploadTexture(rex::ui::vulkan::VulkanDevice* vk_dev, VkCommandBuffer cmd, CachedTexture& tex) {
+  if (tex.vk_view != VK_NULL_HANDLE) return true;
+  if (tex.width == 0 || tex.height == 0 || tex.data.empty()) return false;
+
+  VkDevice dev = vk_dev->device();
+  auto& dfn = GetVulkanDispatch();
+
+  VkFormat vk_fmt = MapXenosFormatToVkFormat(tex.format);
+  tex.vk_format = vk_fmt;
+
+  VkImageCreateInfo img_ci{};
+  img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  img_ci.imageType = VK_IMAGE_TYPE_2D;
+  img_ci.format = vk_fmt;
+  img_ci.extent = {tex.width, tex.height, 1};
+  img_ci.mipLevels = 1;
+  img_ci.arrayLayers = 1;
+  img_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+  img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+  img_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  img_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+  if (dfn.vkCreateImage(dev, &img_ci, nullptr, &tex.vk_image) != VK_SUCCESS) {
+    return false;
+  }
+
+  VkMemoryRequirements mem_reqs{};
+  dfn.vkGetImageMemoryRequirements(dev, tex.vk_image, &mem_reqs);
+  uint32_t mem_type = FindMemoryType(vk_dev, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+  VkMemoryAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  alloc_info.allocationSize = mem_reqs.size;
+  alloc_info.memoryTypeIndex = mem_type;
+
+  if (dfn.vkAllocateMemory(dev, &alloc_info, nullptr, &tex.vk_mem) != VK_SUCCESS) {
+    return false;
+  }
+
+  dfn.vkBindImageMemory(dev, tex.vk_image, tex.vk_mem, 0);
+
+  VkImageViewCreateInfo view_ci{};
+  view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  view_ci.image = tex.vk_image;
+  view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  view_ci.format = vk_fmt;
+  view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  view_ci.subresourceRange.baseMipLevel = 0;
+  view_ci.subresourceRange.levelCount = 1;
+  view_ci.subresourceRange.baseArrayLayer = 0;
+  view_ci.subresourceRange.layerCount = 1;
+
+  if (dfn.vkCreateImageView(dev, &view_ci, nullptr, &tex.vk_view) != VK_SUCCESS) {
+    return false;
+  }
+
+  // Use a per-upload staging buffer from the pool (safe for multiple uploads per cmdbuf)
+  StagingBuffer& staging = AcquireStagingBuffer(vk_dev, tex.data.size());
+  UploadBufferData(vk_dev, staging.mem, tex.data.data(), tex.data.size());
+
+  VkImageMemoryBarrier barrier{};
+  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  barrier.srcAccessMask = 0;
+  barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.image = tex.vk_image;
+  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  barrier.subresourceRange.baseMipLevel = 0;
+  barrier.subresourceRange.levelCount = 1;
+  barrier.subresourceRange.baseArrayLayer = 0;
+  barrier.subresourceRange.layerCount = 1;
+
+  dfn.vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+  VkBufferImageCopy copy_region{};
+  copy_region.bufferOffset = 0;
+  copy_region.bufferRowLength = 0;   // tightly packed
+  copy_region.bufferImageHeight = 0; // tightly packed
+  copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  copy_region.imageSubresource.mipLevel = 0;
+  copy_region.imageSubresource.baseArrayLayer = 0;
+  copy_region.imageSubresource.layerCount = 1;
+  copy_region.imageExtent = {tex.width, tex.height, 1};
+
+  dfn.vkCmdCopyBufferToImage(cmd, staging.buf, tex.vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+  barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+  barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+  dfn.vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+  return true;
+}
+
+static VkFilter MapXenosFilter(uint32_t xf) {
+  // 0=point, 1=linear
+  return (xf == 0) ? VK_FILTER_NEAREST : VK_FILTER_LINEAR;
+}
+
+static VkSamplerAddressMode MapXenosAddressMode(uint32_t xm) {
+  switch (xm) {
+    case 1: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    case 2: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case 3: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    case 4: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    default: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  }
+}
+
 void Initialize() {
   if (s_initialized) return;
   s_initialized = true;
@@ -296,6 +564,8 @@ void Initialize() {
 void OnPresent(uint32_t flags) {
   auto& ps = PipelineState::Instance();
   uint64_t frame = ps.stats.total_frames.fetch_add(1, std::memory_order_relaxed);
+  // Reset staging pool index at start of each frame
+  s_tex_staging_pool_used = 0;
   std::fprintf(stderr, "[REV2_GPU] >>> OnPresent entered! frame=%lu, draws=%zu, clears=%d\n",
                frame + 1, ps.frame_draw_list.size(), ps.clear_state.pending);
 
@@ -416,6 +686,67 @@ void OnPresent(uint32_t flags) {
           std::fflush(stderr);
         }
 
+        // Atualização do Set 3 (Texturas e Samplers)
+        EnsureDummyTexture(vk_dev);
+        VkDescriptorSet set3 = pm.GetDescriptorSet(3);
+        if (set3 != VK_NULL_HANDLE && s_dummy_view != VK_NULL_HANDLE) {
+          std::array<VkDescriptorImageInfo, 16> img_infos{};
+          std::array<VkDescriptorImageInfo, 16> smp_infos{};
+          std::array<VkWriteDescriptorSet, 32> writes3{};
+
+          for (uint32_t s = 0; s < 16; ++s) {
+            VkImageView view = s_dummy_view;
+            uint32_t addr = ps.textures[s].guest_addr;
+            if (addr != 0) {
+              auto it = s_texture_cache.find(addr);
+              if (it != s_texture_cache.end() && it->second.vk_view != VK_NULL_HANDLE) {
+                view = it->second.vk_view;
+              }
+            }
+            img_infos[s].imageView = view;
+            img_infos[s].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            writes3[s].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writes3[s].dstSet = set3;
+            writes3[s].dstBinding = s;
+            writes3[s].dstArrayElement = 0;
+            writes3[s].descriptorCount = 1;
+            writes3[s].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            writes3[s].pImageInfo = &img_infos[s];
+
+            // Lazily create VkSampler if missing or invalidated
+            auto& samp_bind = ps.samplers[s];
+            if (samp_bind.vk_sampler == VK_NULL_HANDLE) {
+              VkSamplerCreateInfo sci{};
+              sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+              sci.magFilter = MapXenosFilter(samp_bind.mag_filter);
+              sci.minFilter = MapXenosFilter(samp_bind.min_filter);
+              sci.mipmapMode = (samp_bind.mip_filter == 0) ? VK_SAMPLER_MIPMAP_MODE_NEAREST : VK_SAMPLER_MIPMAP_MODE_LINEAR;
+              sci.addressModeU = MapXenosAddressMode(samp_bind.address_u);
+              sci.addressModeV = MapXenosAddressMode(samp_bind.address_v);
+              sci.addressModeW = MapXenosAddressMode(samp_bind.address_w);
+              sci.maxAnisotropy = 1.0f;
+              sci.minLod = 0.0f;
+              sci.maxLod = VK_LOD_CLAMP_NONE;
+              dfn.vkCreateSampler(dev, &sci, nullptr, &samp_bind.vk_sampler);
+            }
+            VkSampler sampler = (samp_bind.vk_sampler != VK_NULL_HANDLE)
+                                    ? samp_bind.vk_sampler
+                                    : s_default_sampler;
+            smp_infos[s].sampler = sampler;
+
+            writes3[16 + s].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writes3[16 + s].dstSet = set3;
+            writes3[16 + s].dstBinding = 16 + s;
+            writes3[16 + s].dstArrayElement = 0;
+            writes3[16 + s].descriptorCount = 1;
+            writes3[16 + s].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+            writes3[16 + s].pImageInfo = &smp_infos[s];
+          }
+
+          dfn.vkUpdateDescriptorSets(dev, static_cast<uint32_t>(writes3.size()), writes3.data(), 0, nullptr);
+        }
+
         std::fprintf(stderr, "[REV2_GPU] Calling RefreshGuestOutput w=%u, h=%u\n", w, h);
         presenter->RefreshGuestOutput(
             w, h, 16, 9,
@@ -432,6 +763,19 @@ void OnPresent(uint32_t flags) {
               begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
               dfn.vkBeginCommandBuffer(s_clear_cmd_buf, &begin_info);
               std::fprintf(stderr, "[REV2_GPU] vkBeginCommandBuffer done, draws=%zu\n", ps.frame_draw_list.size());
+
+              // Transiciona a dummy texture para SHADER_READ_ONLY_OPTIMAL na primeira vez
+              if (!s_dummy_layout_transitioned && s_dummy_image != VK_NULL_HANDLE) {
+                TransitionDummyImageToShaderRead(s_clear_cmd_buf);
+                s_dummy_layout_transitioned = true;
+              }
+
+              // Upload de novas texturas pendentes no cache antes do render pass
+              for (auto& [addr, tex] : s_texture_cache) {
+                if (tex.vk_view == VK_NULL_HANDLE && !tex.data.empty()) {
+                  UploadTexture(vk_dev, s_clear_cmd_buf, tex);
+                }
+              }
 
               if (!ps.frame_draw_list.empty()) {
                 // Marco M6: RenderPass com Geometria
@@ -806,14 +1150,22 @@ void OnSetSamplerState(uint32_t sampler, uint32_t type, uint32_t value) {
   auto& ps = PipelineState::Instance();
   ps.stats.sampler_state_changes.fetch_add(1, std::memory_order_relaxed);
   if (sampler < ps.samplers.size()) {
+    auto& sb = ps.samplers[sampler];
+    bool changed = false;
     switch (type) {
-      case 1: ps.samplers[sampler].address_u = value; break;
-      case 2: ps.samplers[sampler].address_v = value; break;
-      case 3: ps.samplers[sampler].address_w = value; break;
-      case 4: ps.samplers[sampler].mag_filter = value; break;
-      case 5: ps.samplers[sampler].min_filter = value; break;
-      case 6: ps.samplers[sampler].mip_filter = value; break;
+      case 1: if (sb.address_u != value) { sb.address_u = value; changed = true; } break;
+      case 2: if (sb.address_v != value) { sb.address_v = value; changed = true; } break;
+      case 3: if (sb.address_w != value) { sb.address_w = value; changed = true; } break;
+      case 4: if (sb.mag_filter != value) { sb.mag_filter = value; changed = true; } break;
+      case 5: if (sb.min_filter != value) { sb.min_filter = value; changed = true; } break;
+      case 6: if (sb.mip_filter != value) { sb.mip_filter = value; changed = true; } break;
       default: break;
+    }
+    // Lazily rebuild the VkSampler when state changes (device will be available next frame)
+    if (changed && sb.vk_sampler != VK_NULL_HANDLE) {
+      // Mark for rebuild — destroy and null out; will be recreated at descriptor update time
+      // We defer creation to OnPresent where we have vk_dev; just null it here
+      sb.vk_sampler = VK_NULL_HANDLE;
     }
   }
 }
@@ -857,6 +1209,8 @@ void OnSetVertexDeclaration(uint32_t decl_addr) {
 void OnDrawIndexedPrimitive(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32_t num_vtx, uint32_t start_idx, uint32_t prim_count) {
   auto& ps = PipelineState::Instance();
   ps.stats.draw_indexed_calls.fetch_add(1, std::memory_order_relaxed);
+  // Note: EmitVkDrawIndexed must be called by the caller with the guest memory base pointer
+  // This stub exists for callers that don't have access to base; EmitVkDrawIndexed is the real path.
 }
 
 #include <dlfcn.h>
@@ -985,6 +1339,67 @@ void EmitVkDrawIndexed(uint32_t type, int32_t base_vtx, uint32_t min_idx, uint32
 void OnDrawPrimitive(uint32_t type, uint32_t start_vtx, uint32_t prim_count) {
   auto& ps = PipelineState::Instance();
   ps.stats.draw_primitive_calls.fetch_add(1, std::memory_order_relaxed);
+  // Emit non-indexed draw into the frame draw list
+  EmitVkDrawPrimitive(type, start_vtx, prim_count, nullptr);
+}
+
+void EmitVkDrawPrimitive(uint32_t type, uint32_t start_vtx, uint32_t prim_count, const uint8_t* base) {
+  auto& ps = PipelineState::Instance();
+
+  uint32_t num_vertices = 0;
+  switch (type) {
+    case 1: num_vertices = prim_count; break;           // POINTLIST
+    case 2: num_vertices = prim_count * 2; break;       // LINELIST
+    case 3: num_vertices = prim_count + 1; break;       // LINESTRIP
+    case 4: num_vertices = prim_count * 3; break;       // TRIANGLELIST
+    case 5: num_vertices = prim_count + 2; break;       // TRIANGLESTRIP
+    case 6: num_vertices = prim_count + 2; break;       // TRIANGLEFAN
+    case 8: num_vertices = prim_count * 3; break;       // RECTLIST
+    default: num_vertices = prim_count ? prim_count * 3 : 3; break;
+  }
+  if (num_vertices == 0) return;
+  if (num_vertices > 500000) num_vertices = 500000;
+
+  ps.stats.vk_draws_emitted.fetch_add(1, std::memory_order_relaxed);
+
+  VkDrawIndexedCommand cmd{};
+  cmd.primitive_type = type;
+  cmd.num_vertices = num_vertices;
+  cmd.instance_count = 1;
+  cmd.first_instance = 0;
+  cmd.index_count = 0;       // non-indexed
+  cmd.index_data_size = 0;
+
+  // Copy vertex data for the range [start_vtx, start_vtx + num_vertices)
+  uint32_t vtx_stride = ps.vertex_streams[0].stride ? ps.vertex_streams[0].stride : 32;
+  uint32_t vtx_offset_out = static_cast<uint32_t>(ps.frame_vertex_data.size());
+  uint32_t vtx_bytes = 0;
+
+  if (base && ps.vertex_streams[0].buffer_guest_addr && num_vertices > 0) {
+    vtx_bytes = (start_vtx + num_vertices) * vtx_stride;
+    const uint8_t* src_vtx = base + ps.vertex_streams[0].buffer_guest_addr + ps.vertex_streams[0].offset;
+    size_t old_size = ps.frame_vertex_data.size();
+    ps.frame_vertex_data.resize(old_size + vtx_bytes);
+    uint8_t* dst_vtx = ps.frame_vertex_data.data() + old_size;
+    const uint32_t* src_dw = reinterpret_cast<const uint32_t*>(src_vtx);
+    uint32_t* dst_dw = reinterpret_cast<uint32_t*>(dst_vtx);
+    size_t dword_count = vtx_bytes / 4;
+    for (size_t i = 0; i < dword_count; ++i) {
+      dst_dw[i] = __builtin_bswap32(src_dw[i]);
+    }
+  }
+
+  cmd.vertex_data_offset = vtx_offset_out;
+  cmd.vertex_data_size = vtx_bytes;
+  cmd.vertex_stride = vtx_stride;
+  // For non-indexed draws, first_instance encodes start_vtx
+  cmd.first_instance = start_vtx;
+
+  cmd.vs_handle = ps.current_vs_handle;
+  cmd.ps_handle = ps.current_ps_handle;
+  cmd.state = ps.state;
+
+  ps.frame_draw_list.push_back(cmd);
 }
 
 void OnSetBlendState(uint32_t src_blend, uint32_t dst_blend, uint32_t op) {

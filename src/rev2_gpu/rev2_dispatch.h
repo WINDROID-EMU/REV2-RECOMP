@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include <rex/ui/vulkan/api.h>
 #include <dlfcn.h>
 #include <cstdio>
 
@@ -59,6 +59,16 @@ struct VulkanDispatch {
   PFN_vkDestroyShaderModule vkDestroyShaderModule = nullptr;
   PFN_vkCreateGraphicsPipelines vkCreateGraphicsPipelines = nullptr;
   PFN_vkDestroyPipeline vkDestroyPipeline = nullptr;
+
+  PFN_vkCreateImage vkCreateImage = nullptr;
+  PFN_vkDestroyImage vkDestroyImage = nullptr;
+  PFN_vkGetImageMemoryRequirements vkGetImageMemoryRequirements = nullptr;
+  PFN_vkBindImageMemory vkBindImageMemory = nullptr;
+  PFN_vkCreateImageView vkCreateImageView = nullptr;
+  PFN_vkDestroyImageView vkDestroyImageView = nullptr;
+  PFN_vkCreateSampler vkCreateSampler = nullptr;
+  PFN_vkDestroySampler vkDestroySampler = nullptr;
+  PFN_vkCmdCopyBufferToImage vkCmdCopyBufferToImage = nullptr;
 
   // Physical device functions
   PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nullptr;
@@ -143,6 +153,16 @@ struct VulkanDispatch {
     LOAD_VK_FN(vkDestroyShaderModule);
     LOAD_VK_FN(vkCreateGraphicsPipelines);
     LOAD_VK_FN(vkDestroyPipeline);
+
+    LOAD_VK_FN(vkCreateImage);
+    LOAD_VK_FN(vkDestroyImage);
+    LOAD_VK_FN(vkGetImageMemoryRequirements);
+    LOAD_VK_FN(vkBindImageMemory);
+    LOAD_VK_FN(vkCreateImageView);
+    LOAD_VK_FN(vkDestroyImageView);
+    LOAD_VK_FN(vkCreateSampler);
+    LOAD_VK_FN(vkDestroySampler);
+    LOAD_VK_FN(vkCmdCopyBufferToImage);
 
 #undef LOAD_VK_FN
 
